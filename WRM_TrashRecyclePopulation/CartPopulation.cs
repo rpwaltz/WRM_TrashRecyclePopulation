@@ -137,27 +137,16 @@ namespace WRM_TrashRecyclePopulation
                             recyclingCart = saveCart(recyclingCart);
                             this.cartPopulationDictionary.Add(recycledictionaryKey, recyclingCart);
                             }
-                        else
-                            {
-                            WRMLogger.LogBuilder.AppendLine("NO RECYCLING CART FOR ADDRESS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "] \n");
-                            }
                         Cart recyclingCartHistory = buildCart(row, address.AddressId, 16, 17, true, true);
                         if (recyclingCartHistory != null)
                             {
                             recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
                             }
-                        else
-                            {
-                            WRMLogger.LogBuilder.AppendLine("NO RECYCLING CART FOR ADDRESS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "] \n");
-                            }
+
                         recyclingCartHistory = buildCart(row, address.AddressId, 18, 19, true, true);
                         if (recyclingCartHistory != null)
                             {
                             recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
-                            }
-                        else
-                            {
-                            WRMLogger.LogBuilder.AppendLine("NO RECYCLING CART FOR ADDRESS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "] \n");
                             }
                         }
                     //                    WRMLogger.Logger.log();
@@ -184,7 +173,7 @@ namespace WRM_TrashRecyclePopulation
 
             bool unknown = false;
 
-            ExcelRange currentTrashCartSN = worksheet.Cells[row, 7];
+            ExcelRange currentTrashCartSN = worksheet.Cells[row, trashCartSNCellId];
 
             // This the exception to the failUnknown being true
             // The spreadsheet indicates there was a cart at the address, but there no longer is one.  So, we should create the cart instead of return null
@@ -197,7 +186,7 @@ namespace WRM_TrashRecyclePopulation
 
 
             Cart cart = new Cart();
-            ExcelRange currentTrashDeliveryDate = worksheet.Cells[row, 6];
+            ExcelRange currentTrashDeliveryDate = worksheet.Cells[row, trashDeliveryDateCellId];
             if (unknown)
                 {
                 cart.CartSerialNumber = "UNKNOWN";
@@ -278,7 +267,7 @@ namespace WRM_TrashRecyclePopulation
 
         public Cart saveCart(Cart cart)
             {
-            List<string> serialNumberList = null;
+            
             string serialNumber = cart.CartSerialNumber;
             if (String.IsNullOrWhiteSpace(serialNumber))
                 {
