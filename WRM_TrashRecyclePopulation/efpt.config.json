@@ -1,0 +1,52 @@
+﻿{
+   "CodeGenerationMode": 0,
+   "ContextClassName": "WRM_TrashRecycle",
+   "ContextNamespace": null,
+   "DefaultDacpacSchema": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": true,
+   "ModelNamespace": "",
+   "OutputContextPath": "WRM_EntityFramework\/WRM_TrashRecycle",
+   "OutputPath": "WRM_EntityFramework\/WRM_TrashRecycle\/Models",
+   "ProjectRootNamespace": "WRM_TrashRecyclePopulation",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 0,
+   "SelectedToBeGenerated": 0,
+   "Tables": [
+      {
+         "Name": "[dbo].[Address]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[BackDoorPickup]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Cart]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Resident]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[Kgis_Resident_Address_View]",
+         "ObjectType": 3
+      }
+   ],
+   "UiHint": "apptestdb\\appssql16.WRM_TrashRecycle.dbo",
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDbContextSplitting": true,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseInflector": false,
+   "UseLegacyPluralizer": false,
+   "UseNoConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UseSchemaFolders": false,
+   "UseSpatial": false
+}
