@@ -4,7 +4,7 @@
    "ContextNamespace": null,
    "DefaultDacpacSchema": null,
    "FilterSchemas": false,
-   "IncludeConnectionString": true,
+   "IncludeConnectionString": false,
    "ModelNamespace": "",
    "OutputContextPath": "WRM_EntityFramework\/WRM_TrashRecycle",
    "OutputPath": "WRM_EntityFramework\/WRM_TrashRecycle\/Models",
@@ -34,7 +34,7 @@
          "ObjectType": 3
       }
    ],
-   "UiHint": "apptestdb\\appssql16.WRM_TrashRecycle.dbo",
+   "UiHint": "TEST.WRM_TrashRecycle.dbo",
    "UseBoolPropertiesWithoutDefaultSql": false,
    "UseDatabaseNames": false,
    "UseDbContextSplitting": true,

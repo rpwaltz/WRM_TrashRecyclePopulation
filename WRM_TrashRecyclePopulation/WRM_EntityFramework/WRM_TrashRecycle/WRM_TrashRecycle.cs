@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Configurations;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
+using System.Configuration;
 
 #nullable disable
 
@@ -25,16 +26,15 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle
         public virtual DbSet<Cart> Cart { get; set; }
         public virtual DbSet<KgisResidentAddressView> KgisResidentAddressView { get; set; }
         public virtual DbSet<Resident> Resident { get; set; }
-
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            if (!optionsBuilder.IsConfigured)
             {
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Data Source=TEST;Initial Catalog=WRM_TrashRecycle;Integrated Security=True");
-            }
-        }
+            if (!optionsBuilder.IsConfigured)
+                {
+                var connectionString = ConfigurationManager.ConnectionStrings["WRM_TrashRecycle"].ConnectionString;
+                optionsBuilder.UseSqlServer(connectionString);
 
+                }
+            }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
