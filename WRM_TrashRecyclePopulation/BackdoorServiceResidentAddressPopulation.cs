@@ -51,12 +51,12 @@ namespace WRM_TrashRecyclePopulation
 
 
                 foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdoorRequestList)
-                    {
- //                   if (maxToProcess >= 2000)
- //                       {
+                    { 
+                    if (maxToProcess >= 1000)
+                        {
 
- //                       break;
- //                       }
+                        break;
+                        }
                     ++maxToProcess;
                     if (backdoorRequest == null)
                         {

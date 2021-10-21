@@ -28,7 +28,7 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.SolidWaste
         {
             if (!optionsBuilder.IsConfigured)
             {
-                var connectionString = ConfigurationManager.ConnectionStrings["WRM_TrashRecycle"].ConnectionString;
+                var connectionString = ConfigurationManager.ConnectionStrings["SolidWasteDatabase"].ConnectionString;
                 optionsBuilder.UseSqlServer(connectionString);
 
                 }

@@ -15,7 +15,7 @@ namespace WRM_TrashRecyclePopulation
 
         public Dictionary<string, Cart> cartPopulationDictionary;
 
-        public static string xlsxSNMasterlistPath = @"C:\Users\rwaltz\Documents\SolidWasteData\SN_MASTERLIST_Current.xlsm";
+        public static string xlsxSNMasterlistPath = @"C:\Users\rwaltz\Documents\SolidWaste\SN_MASTERLIST_Current.xlsm";
         static private IEnumerable<KgisResidentAddressView> kgisCityResidentAddressList;
         private ExcelWorksheet worksheet;
         private int totalRowsWorksheet;
@@ -67,11 +67,11 @@ namespace WRM_TrashRecyclePopulation
                 //               WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
                 for (int row = 2; row <= totalRowsWorksheet; row++)
                     {
-                    //                   if (maxToProcess >= 2000)
-                    //                       {
-                    //
-                    //                      break;
-                    //                    }
+                                       if (maxToProcess >= 1000)
+                                           {
+                    
+                                          break;
+                                        }
                     ++maxToProcess;
 
                     // has the default manner to 
@@ -101,17 +101,7 @@ namespace WRM_TrashRecyclePopulation
                     string trashdictionaryKey = dictionaryKey + "TRASH";
                     if (!this.cartPopulationDictionary.ContainsKey(trashdictionaryKey))
                         {
-                        Cart trashcart = buildCart(row, address.AddressId, 6, 7, false, false);
-                        if (trashcart != null)
-                            {
-
-                            trashcart = saveCart(trashcart);
-                            this.cartPopulationDictionary.Add(trashdictionaryKey, trashcart);
-                            }
-                        else
-                            {
-                            WRMLogger.LogBuilder.AppendLine("NO TRASH CART FOR ADDRESS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "] \n");
-                            }
+                        //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
                         Cart trashCartHistory = buildCart(row, address.AddressId, 8, 9, false, true);
                         if (trashCartHistory != null)
                             {
@@ -127,16 +117,22 @@ namespace WRM_TrashRecyclePopulation
                             {
                             saveAndDeleteCart(trashCartHistory);
                             }
+                        Cart trashcart = buildCart(row, address.AddressId, 6, 7, false, false);
+                        if (trashcart != null)
+                            {
+
+                            trashcart = saveCart(trashcart);
+                            this.cartPopulationDictionary.Add(trashdictionaryKey, trashcart);
+                            }
+                        else
+                            {
+                            WRMLogger.LogBuilder.AppendLine("NO TRASH CART FOR ADDRESS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "] \n");
+                            }
                         }
                     string recycledictionaryKey = dictionaryKey + "RECYCLE";
                     if (!this.cartPopulationDictionary.ContainsKey(recycledictionaryKey))
                         {
-                        Cart recyclingCart = buildCart(row, address.AddressId, 14, 15, true, true);
-                        if (recyclingCart != null)
-                            {
-                            recyclingCart = saveCart(recyclingCart);
-                            this.cartPopulationDictionary.Add(recycledictionaryKey, recyclingCart);
-                            }
+                        //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
                         Cart recyclingCartHistory = buildCart(row, address.AddressId, 16, 17, true, true);
                         if (recyclingCartHistory != null)
                             {
@@ -147,6 +143,12 @@ namespace WRM_TrashRecyclePopulation
                         if (recyclingCartHistory != null)
                             {
                             recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
+                            }
+                        Cart recyclingCart = buildCart(row, address.AddressId, 14, 15, true, true);
+                        if (recyclingCart != null)
+                            {
+                            recyclingCart = saveCart(recyclingCart);
+                            this.cartPopulationDictionary.Add(recycledictionaryKey, recyclingCart);
                             }
                         }
                     //                    WRMLogger.Logger.log();

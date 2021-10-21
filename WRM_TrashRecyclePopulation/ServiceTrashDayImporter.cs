@@ -13,7 +13,7 @@ namespace WRM_TrashRecyclePopulation
 
         public Dictionary<string, Address> addressDictionary { get; }
 
-        public static string xlsxServiceDayTrashAndRecyclingPath = @"C:\\Users\\rwaltz\\Documents\\SolidWasteData\\Service_Day_Trash_and_Recycling.xlsx";
+        public static string xlsxServiceDayTrashAndRecyclingPath = @"C:\Users\rwaltz\Documents\SolidWaste\Service_Day_Trash_and_Recycling.xlsx";
         public static   ServiceTrashDayImporter serviceTrashDayImporter;
 
         public static ServiceTrashDayImporter getServiceTrashDayImporter()

@@ -21,19 +21,24 @@ namespace WRM_TrashRecyclePopulation
        
         static void Main()
             {
-            WRMLogger.Logger = new WRMLogger("C:\\TMP", "wrm_TrashRecycle.log");
+            WRMLogger.Logger = new WRMLogger(@"C:\Users\rwaltz\Documents\SolidWaste", "wrm_TrashRecycle.log");
+
+
+
 
             WRMLogger.LogBuilder.AppendLine("Start");
-            try
-                {
-                WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle wrmTrashRecycleContext = new WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle();
-                CartPopulation cartPopulation = new CartPopulation(wrmTrashRecycleContext);
-                cartPopulation.populateCarts();
+
+
                 /*
-                ColorXcelFinder colorxcel = new ColorXcelFinder();
-                colorxcel.findColors();
-                */
-                /*
+WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle wrmTrashRecycleContext = new WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle();
+CartPopulation cartPopulation = new CartPopulation(wrmTrashRecycleContext);
+cartPopulation.populateCarts();
+
+ColorXcelFinder colorxcel = new ColorXcelFinder();
+colorxcel.findColors();
+*/
+
+
                 try
                     {
                     ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
@@ -42,8 +47,6 @@ namespace WRM_TrashRecyclePopulation
                     DateTime beforeNow = DateTime.Now;
                     DateTime justNow = DateTime.Now;
                     TimeSpan timeDiff = justNow - beforeNow;
-
-                    WRMLogger.Logger = new WRMLogger("C:\\TMP", "wrm_TrashRecycle.log");
 
                     WRMLogger.LogBuilder.AppendLine("Start " + justNow.ToString("o", new CultureInfo("en-us")) + " MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
 
@@ -71,11 +74,8 @@ namespace WRM_TrashRecyclePopulation
                                     }
                                 }
 
-
                             wrmTrashRecycleContext.SaveChanges();
                             wrmTrashRecycleContext.ChangeTracker.DetectChanges();
-
-
 
                             }
 
@@ -88,7 +88,7 @@ namespace WRM_TrashRecyclePopulation
                     timeDiff = justNow - beforeNow;
                     WRMLogger.LogBuilder.AppendLine("End " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
                     beforeNow = justNow;
-                                            */
+                                            
                 }
 
             catch (Exception e)

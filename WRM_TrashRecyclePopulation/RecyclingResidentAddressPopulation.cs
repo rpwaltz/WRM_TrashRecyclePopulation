@@ -56,11 +56,11 @@ namespace WRM_TrashRecyclePopulation
 
                 foreach (RecyclingRequest recyclingRequest in orderedSolidWasteRecyclingRequestList)
                     {
- //                   if (maxToProcess >= 2000)
- //                       {
-//
-//                        break;
-//                        }
+                    if (maxToProcess >= 1000)
+                        {
+
+                        break;
+                        }
                     ++maxToProcess;
                     logLine = "foreach recycling Request";
 //                    WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
@@ -137,7 +137,7 @@ namespace WRM_TrashRecyclePopulation
             }
 
 
-        public Address buildRecyclingAddress(dynamic recyclingRequest, KgisResidentAddressView kgisCityResidentAddress)
+        private Address buildRecyclingAddress(dynamic recyclingRequest, KgisResidentAddressView kgisCityResidentAddress)
             {
             Address address = buildRequestAddress(recyclingRequest, kgisCityResidentAddress);
 
