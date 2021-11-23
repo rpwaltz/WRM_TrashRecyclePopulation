@@ -52,11 +52,11 @@ namespace WRM_TrashRecyclePopulation
 
                 foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdoorRequestList)
                     { 
-                    if (maxToProcess >= 1000)
-                        {
-
-                        break;
-                        }
+                //    if (maxToProcess >= 1000)
+                //        {
+                //
+                //        break;
+                //        }
                     ++maxToProcess;
                     if (backdoorRequest == null)
                         {
@@ -76,9 +76,9 @@ namespace WRM_TrashRecyclePopulation
                 }
             catch (Exception e)
                 {
-                WRMLogger.LogBuilder.AppendLine( e.ToString());
+                WRMLogger.LogBuilder.AppendLine( e.StackTrace);
                 WRMLogger.Logger.log();
-                
+                throw e;
                 }
             return false;
             }

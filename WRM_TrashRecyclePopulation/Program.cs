@@ -18,7 +18,7 @@ namespace WRM_TrashRecyclePopulation
     class Program
         {
 
-       
+        
         static void Main()
             {
             WRMLogger.Logger = new WRMLogger(@"C:\Users\rwaltz\Documents\SolidWaste", "wrm_TrashRecycle.log");
@@ -94,11 +94,11 @@ colorxcel.findColors();
             catch (Exception e)
                 {
 
-                WRMLogger.LogBuilder.AppendLine(e.ToString());
+                WRMLogger.LogBuilder.AppendLine(e.StackTrace);
                 
                 Exception inner = e.InnerException;
                 if (inner != null) { 
-                WRMLogger.LogBuilder.AppendLine(inner.ToString());
+                WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
                     }
 
                 }

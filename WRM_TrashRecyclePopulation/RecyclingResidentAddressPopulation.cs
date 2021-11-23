@@ -56,11 +56,11 @@ namespace WRM_TrashRecyclePopulation
 
                 foreach (RecyclingRequest recyclingRequest in orderedSolidWasteRecyclingRequestList)
                     {
-                    if (maxToProcess >= 1000)
-                        {
-
-                        break;
-                        }
+                 //   if (maxToProcess >= 1000)
+                 //       {
+                 //
+                 //       break;
+                 //       }
                     ++maxToProcess;
                     logLine = "foreach recycling Request";
 //                    WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
@@ -89,8 +89,9 @@ namespace WRM_TrashRecyclePopulation
                 }
             catch (Exception e)
                 {
-                WRMLogger.LogBuilder.AppendLine( e.ToString());
+                WRMLogger.LogBuilder.AppendLine( e.StackTrace);
                 WRMLogger.Logger.log();
+                throw e;
                 }
             return false;
             }

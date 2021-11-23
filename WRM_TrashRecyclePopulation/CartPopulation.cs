@@ -67,11 +67,11 @@ namespace WRM_TrashRecyclePopulation
                 //               WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
                 for (int row = 2; row <= totalRowsWorksheet; row++)
                     {
-                                       if (maxToProcess >= 1000)
-                                           {
-                    
-                                          break;
-                                        }
+                                  //     if (maxToProcess >= 1000)
+                                  //         {
+                    //
+                                   //       break;
+                                   //     }
                     ++maxToProcess;
 
                     // has the default manner to 
@@ -160,13 +160,14 @@ namespace WRM_TrashRecyclePopulation
             catch (Exception e)
                 {
 
-                WRMLogger.LogBuilder.AppendLine(e.ToString());
+                WRMLogger.LogBuilder.AppendLine(e.StackTrace);
                 Exception inner = e.InnerException;
                 if (inner != null)
                     {
-                    WRMLogger.LogBuilder.AppendLine(inner.ToString());
+                    WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
                     }
                 WRMLogger.Logger.log();
+                throw e;
                 }
             }
 
