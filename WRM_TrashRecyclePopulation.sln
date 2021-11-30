@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30611.23
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "WRM_TrashRecyclePopulation", "WRM_TrashRecyclePopulation\WRM_TrashRecyclePopulation.csproj", "{97992CCD-8C78-4E06-ABBF-4AF7A14A6224}"
 EndProject
