@@ -157,17 +157,19 @@ namespace WRM_TrashRecyclePopulation
                 //                WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
                 WRMLogger.Logger.log();
                 }
-            catch (Exception e)
+            catch (Exception ex)
                 {
-
-                WRMLogger.LogBuilder.AppendLine(e.StackTrace);
-                Exception inner = e.InnerException;
+                WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}",
+                  ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
+                WRMLogger.LogBuilder.AppendLine(ex.ToString());
+                WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+                Exception inner = ex.InnerException;
                 if (inner != null)
                     {
                     WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
                     }
                 WRMLogger.Logger.log();
-                throw e;
+                throw ex;
                 }
             }
 
@@ -240,6 +242,7 @@ namespace WRM_TrashRecyclePopulation
                     }
                 catch (FormatException ex)
                     {
+                    WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}", ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
                     WRMLogger.LogBuilder.AppendLine(ex.ToString());
                     Exception inner = ex.InnerException;
                     if (inner != null)
@@ -497,11 +500,12 @@ namespace WRM_TrashRecyclePopulation
                         }
                     catch (Exception ex)
                         {
+                        WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}", ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
                         WRMLogger.LogBuilder.AppendLine(ex.ToString());
                         Exception inner = ex.InnerException;
                         if (inner != null)
                             {
-                            WRMLogger.LogBuilder.AppendLine(inner.ToString());
+                            WRMLogger.LogBuilder.AppendLine("INNER " + inner.ToString());
                             }
                         if (address != null)
                             {
@@ -529,6 +533,7 @@ namespace WRM_TrashRecyclePopulation
                         }
                     catch (Exception ex)
                         {
+                        WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}", ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
                         WRMLogger.LogBuilder.AppendLine(ex.ToString());
                         Exception inner = ex.InnerException;
                         if (inner != null)

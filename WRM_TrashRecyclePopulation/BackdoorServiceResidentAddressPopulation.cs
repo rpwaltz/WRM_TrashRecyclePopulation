@@ -74,11 +74,14 @@ namespace WRM_TrashRecyclePopulation
                 WRMLogger.Logger.log();
                 return true;
                 }
-            catch (Exception e)
+            catch (Exception ex)
                 {
-                WRMLogger.LogBuilder.AppendLine( e.StackTrace);
+                WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}",
+                    ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
+                WRMLogger.LogBuilder.AppendLine(ex.ToString());
+                WRMLogger.LogBuilder.AppendLine( ex.StackTrace);
                 WRMLogger.Logger.log();
-                throw e;
+                throw ex;
                 }
             return false;
             }

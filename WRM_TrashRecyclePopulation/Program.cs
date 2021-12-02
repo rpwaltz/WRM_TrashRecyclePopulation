@@ -29,7 +29,7 @@ namespace WRM_TrashRecyclePopulation
             WRMLogger.LogBuilder.AppendLine("Start");
 
 
-                /*
+            /*
 WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle wrmTrashRecycleContext = new WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle();
 CartPopulation cartPopulation = new CartPopulation(wrmTrashRecycleContext);
 cartPopulation.populateCarts();
@@ -37,16 +37,16 @@ cartPopulation.populateCarts();
 ColorXcelFinder colorxcel = new ColorXcelFinder();
 colorxcel.findColors();
 */
+            DateTime begin = DateTime.Now;
+            DateTime beforeNow = DateTime.Now;
+            DateTime justNow = DateTime.Now;
+            TimeSpan timeDiff = justNow - beforeNow;
 
-
-                try
+            try
                     {
                     ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-                    DateTime begin = DateTime.Now;
-                    DateTime beforeNow = DateTime.Now;
-                    DateTime justNow = DateTime.Now;
-                    TimeSpan timeDiff = justNow - beforeNow;
+
 
                     WRMLogger.LogBuilder.AppendLine("Start " + justNow.ToString("o", new CultureInfo("en-us")) + " MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
 
@@ -79,30 +79,25 @@ colorxcel.findColors();
 
                             }
 
-                        justNow = DateTime.Now;
-                        timeDiff = justNow - begin;
-
                         }
-
-                    justNow = DateTime.Now;
-                    timeDiff = justNow - beforeNow;
-                    WRMLogger.LogBuilder.AppendLine("End " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
-                    beforeNow = justNow;
-                                            
+                    
                 }
 
-            catch (Exception e)
+            catch (Exception ex)
                 {
 
-                WRMLogger.LogBuilder.AppendLine(e.StackTrace);
+                WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}", ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
+                WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
                 
-                Exception inner = e.InnerException;
+                Exception inner = ex.InnerException;
                 if (inner != null) { 
                 WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
                     }
 
                 }
-
+            justNow = DateTime.Now;
+            timeDiff = justNow - beforeNow;
+            WRMLogger.LogBuilder.AppendLine("End " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
             WRMLogger.Logger.log();
 
 

@@ -177,7 +177,7 @@ namespace WRM_TrashRecyclePopulation
             WRMLogger.LogBuilder.AppendLine("determineAddressFailure");
 
             String Recycling_KGIS_MAP_VWQuery = String.Format("select *  from Kgis_Resident_Address_View where  ADDRESS_NUM = {0} AND STREET_NAME = '{1}'", request.StreetNumber ?? 0, request.StreetName);
-            WRMLogger.LogBuilder.Append("");
+            WRMLogger.LogBuilder.Append(Recycling_KGIS_MAP_VWQuery);
             List<KgisResidentAddressView> myTableResults =  context.KgisResidentAddressView.FromSqlRaw(Recycling_KGIS_MAP_VWQuery).ToList();
             
             if (myTableResults.Count > 0)
