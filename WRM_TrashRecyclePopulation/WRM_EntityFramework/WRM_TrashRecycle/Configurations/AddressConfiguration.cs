@@ -6,7 +6,6 @@ using System;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle;
 
-
 namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Configurations
 {
     public partial class AddressConfiguration : IEntityTypeConfiguration<Address>

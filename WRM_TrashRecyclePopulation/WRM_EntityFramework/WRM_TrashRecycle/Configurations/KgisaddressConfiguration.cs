@@ -6,16 +6,15 @@ using System;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle;
 
-
 namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Configurations
 {
-    public partial class KgisResidentAddressViewConfiguration : IEntityTypeConfiguration<KgisResidentAddressView>
+    public partial class KgisaddressConfiguration : IEntityTypeConfiguration<Kgisaddress>
     {
-        public void Configure(EntityTypeBuilder<KgisResidentAddressView> entity)
+        public void Configure(EntityTypeBuilder<Kgisaddress> entity)
         {
             entity.HasNoKey();
 
-            entity.ToView("Kgis_Resident_Address_View");
+            entity.ToTable("KGISAddress");
 
             entity.Property(e => e.AddressNum)
                 .HasColumnType("numeric(38, 0)")
@@ -29,6 +28,10 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
                 .HasMaxLength(30)
                 .HasColumnName("ADDRESS_USE_TYPE");
 
+            entity.Property(e => e.DateOfficialChange)
+                .HasColumnType("date")
+                .HasColumnName("DATE_OFFICIAL_CHANGE");
+
             entity.Property(e => e.Jurisdiction)
                 .HasColumnType("numeric(38, 0)")
                 .HasColumnName("JURISDICTION");
@@ -40,6 +43,10 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
             entity.Property(e => e.Longitude)
                 .HasColumnType("numeric(38, 8)")
                 .HasColumnName("LONGITUDE");
+
+            entity.Property(e => e.Objectid)
+                .HasColumnType("numeric(38, 0)")
+                .HasColumnName("OBJECTID");
 
             entity.Property(e => e.Parcelid)
                 .HasMaxLength(50)
@@ -88,6 +95,6 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
             OnConfigurePartial(entity);
         }
 
-        partial void OnConfigurePartial(EntityTypeBuilder<KgisResidentAddressView> entity);
+        partial void OnConfigurePartial(EntityTypeBuilder<Kgisaddress> entity);
     }
 }

@@ -26,15 +26,15 @@
          "ObjectType": 0
       },
       {
-         "Name": "[dbo].[Resident]",
+         "Name": "[dbo].[KGISAddress]",
          "ObjectType": 0
       },
       {
-         "Name": "[dbo].[Kgis_Resident_Address_View]",
-         "ObjectType": 3
+         "Name": "[dbo].[Resident]",
+         "ObjectType": 0
       }
    ],
-   "UiHint": "TEST.WRM_TrashRecycle.dbo",
+   "UiHint": "apptestdb\\appssql16.WRM_TrashRecycle.dbo",
    "UseBoolPropertiesWithoutDefaultSql": false,
    "UseDatabaseNames": false,
    "UseDbContextSplitting": true,
@@ -42,7 +42,9 @@
    "UseHandleBars": false,
    "UseInflector": false,
    "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
    "UseNoConstructor": false,
+   "UseNoDefaultConstructor": false,
    "UseNoNavigations": false,
    "UseNoObjectFilter": false,
    "UseNodaTime": false,

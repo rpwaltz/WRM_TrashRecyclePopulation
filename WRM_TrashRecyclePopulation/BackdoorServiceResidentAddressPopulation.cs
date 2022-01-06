@@ -15,62 +15,38 @@ namespace WRM_TrashRecyclePopulation
     class BackdoorServiceResidentAddressPopulation : ResidentAddressPopulation
         {
 
-        private SolidWaste solidWasteContext;
-        private WRM_TrashRecycle wrmTrashRecycleContext;
         private Dictionary<string, BackDoorPickup> backDoorPickupDictionary = new Dictionary<string, BackDoorPickup>();
 
         public Dictionary<string, BackDoorPickup> BackDoorPickupDictionary { get => backDoorPickupDictionary; set => backDoorPickupDictionary = value; }
 
-        public BackdoorServiceResidentAddressPopulation(SolidWaste solidWasteContext, WRM_TrashRecycle wrmTrashRecycleContext) : base(solidWasteContext, wrmTrashRecycleContext)
-            {
-            this.solidWasteContext = solidWasteContext;
-            this.wrmTrashRecycleContext = wrmTrashRecycleContext;
-
-            }
 
         public bool populateBackdoorServiceAddressCustomer()
             {
             try
                 {
-                DateTime begin = DateTime.Now;
-                DateTime beforeNow = DateTime.Now;
-                DateTime justNow = DateTime.Now;
-                TimeSpan timeDiff = justNow - beforeNow;
-                double loopMillisecondsPast = 0;
-                String logLine;
+                String logLine = "populateBackdoorServiceAddressCustomer";
                 int maxToProcess = 0;
-                logLine = "populateBackdoorServiceAddressCustomer";
-//                WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
 
-                List<BackdoorServiceRequest> solidWasteBackdoorRequestList = solidWasteContext.BackdoorServiceRequest.ToList();
-
-                List<String> requestStatuses = new List<String>() { "PAY FOR SERVICE", "MEDICAL NEED/OVER 75", "REQUESTED" };
-
-                IEnumerable<BackdoorServiceRequest> orderedSolidWasteBackdoorRequestList = solidWasteBackdoorRequestList.Where(swrrl => requestStatuses.Contains(swrrl.Status)).OrderBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.StreetName).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.StreetNumber).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.UnitNumber);
-
-
+                IEnumerable<BackdoorServiceRequest> orderedSolidWasteBackdoorRequestList = WRM_TrashRecycleQueries.retrieveBackdoorRequestList();
 
                 foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdoorRequestList)
-                    { 
-                //    if (maxToProcess >= 1000)
-                //        {
-                //
-                //        break;
-                //        }
+                    {
+                    if (maxToProcess % 100 == 0)
+                        {
+                        Program.logLine = "Processed Backdoor Requests: " + maxToProcess;
+                        WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
+                        }
                     ++maxToProcess;
                     if (backdoorRequest == null)
                         {
                         throw new Exception("backdoor request is null");
                         }
                     logLine = "foreach Backdoor Request";
-//                    WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
+
                     populateResidentAddressFromRequest(backdoorRequest);
 
- //                   WRMLogger.LogBuilder.AppendLine("Backdoor Loop Total MilliSeconds passed : " + loopMillisecondsPast.ToString());
-                    beforeNow = justNow;
-//                    WRMLogger.Logger.log();
                     }
-
                 WRMLogger.Logger.log();
                 return true;
                 }
@@ -81,11 +57,10 @@ namespace WRM_TrashRecyclePopulation
                 WRMLogger.LogBuilder.AppendLine(ex.ToString());
                 WRMLogger.LogBuilder.AppendLine( ex.StackTrace);
                 WRMLogger.Logger.log();
-                throw ex;
                 }
             return false;
             }
-        override public void buildAndSaveTrashRecycleEntitiesFromRequest(dynamic backdoorRequest, IEnumerator<KgisResidentAddressView> foundKgisResidentAddressEnumerator)
+        override public void buildAndSaveTrashRecycleEntitiesFromRequest(dynamic backdoorRequest, IEnumerator<Kgisaddress> foundKgisResidentAddressEnumerator)
             {
 
             if (foundKgisResidentAddressEnumerator.Current == null)
@@ -94,20 +69,23 @@ namespace WRM_TrashRecyclePopulation
 
                 }
 
-            KgisResidentAddressView kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
+            Kgisaddress kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
 
             Address address = builBackdoorAddress(backdoorRequest, kgisCityResidentAddress);
             address = saveAddress(address);
+
 
             Resident resident = buildRequestResident(backdoorRequest, address.AddressId);
 
             resident = saveResident(resident);
 
+
             BackDoorPickup backDoorPickup = buildRequestBackdoorService(backdoorRequest, address.AddressId, resident.ResidentId);
 
             saveBackdoorPickup(backDoorPickup);
+
             }
-        override public void buildAndSaveTrashRecycleEntitiesFromRequestWithUnits(dynamic backdoorRequest, IEnumerator<KgisResidentAddressView> foundKgisResidentAddressEnumerator)
+        override public void buildAndSaveTrashRecycleEntitiesFromRequestWithUnits(dynamic backdoorRequest, IEnumerator<Kgisaddress> foundKgisResidentAddressEnumerator)
             {
             if (foundKgisResidentAddressEnumerator.Current == null)
                 {
@@ -115,7 +93,7 @@ namespace WRM_TrashRecyclePopulation
 
                 }
 
-            KgisResidentAddressView kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
+            Kgisaddress kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
 
             Address address = builBackdoorAddress(backdoorRequest, kgisCityResidentAddress);
             address.UnitNumber = backdoorRequest.UnitNumber;
@@ -132,7 +110,7 @@ namespace WRM_TrashRecyclePopulation
             }
 
 
-        public Address builBackdoorAddress(dynamic backdoorRequest, KgisResidentAddressView kgisCityResidentAddress)
+        public Address builBackdoorAddress(dynamic backdoorRequest, Kgisaddress kgisCityResidentAddress)
             {
             Address address = buildRequestAddress(backdoorRequest, kgisCityResidentAddress);
 
@@ -222,22 +200,30 @@ namespace WRM_TrashRecyclePopulation
         public BackDoorPickup saveBackdoorPickup(BackDoorPickup backdoorPickup)
             {
             BackDoorPickup foundBackdoorPickup;
-            string backdoorDictionaryKey = backdoorPickup.AddressId + "-" + backdoorPickup.ResidentId;
+            string backdoorDictionaryKey = backdoorPickup.AddressId.ToString();
 //            WRMLogger.LogBuilder.AppendLine("backdoorDictionaryKey " + backdoorDictionaryKey);
 
             if (backDoorPickupDictionary.TryGetValue(backdoorDictionaryKey, out foundBackdoorPickup))
                 {
-                backdoorPickup = foundBackdoorPickup;
+                if ((backdoorPickup.UpdateDate ?? Program.posixEpoche) > (foundBackdoorPickup.UpdateDate ?? Program.posixEpoche))
+                    {
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Remove(foundBackdoorPickup);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(backdoorPickup);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                    backdoorPickup = foundBackdoorPickup;
+                    }
                 }
             else
                 {
-                WrmTrashRecycleContext.Add(backdoorPickup);
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(backdoorPickup);
                 // logBuilder.AppendLine("Add " + request.StreetNumber + "  " + request.StreetName);
-                WrmTrashRecycleContext.SaveChanges();
-                WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 backDoorPickupDictionary.Add(backdoorDictionaryKey, backdoorPickup);
                 }
             return backdoorPickup;
             }
+
         }
     }

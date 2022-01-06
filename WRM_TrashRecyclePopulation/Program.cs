@@ -18,69 +18,71 @@ namespace WRM_TrashRecyclePopulation
     class Program
         {
 
-        
+
+        public static DateTime beforeNow = DateTime.Now;
+        public static DateTime justNow = DateTime.Now;
+        public static DateTime posixEpoche = new DateTime(1970, 1, 1, 0, 0, 0);
+        public static TimeSpan timeDiff;
+        public static double loopMillisecondsPast = 0;
+        public static string logLine;
         static void Main()
             {
             WRMLogger.Logger = new WRMLogger(@"C:\Users\rwaltz\Documents\SolidWaste", "wrm_TrashRecycle.log");
 
-
+            DateTime startTime = DateTime.Now;
 
 
             WRMLogger.LogBuilder.AppendLine("Start");
-
-
-            /*
-WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle wrmTrashRecycleContext = new WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle();
-CartPopulation cartPopulation = new CartPopulation(wrmTrashRecycleContext);
-cartPopulation.populateCarts();
-
-ColorXcelFinder colorxcel = new ColorXcelFinder();
-colorxcel.findColors();
-*/
-            DateTime begin = DateTime.Now;
-            DateTime beforeNow = DateTime.Now;
-            DateTime justNow = DateTime.Now;
-            TimeSpan timeDiff = justNow - beforeNow;
+            timeDiff = justNow - beforeNow;
 
             try
+                {
+                ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+
+
+                WRMLogger.LogBuilder.AppendLine("Start " + justNow.ToString("o", new CultureInfo("en-us")) + " MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
+
+                // initiate the KGIS Address Cache
+
+                KGISCityResidentCache.getKGISCityResidentCache();
+
+                WRMLogger.Logger.logMessageAndDeltaTime("Populated KGISCityResidentCache ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                WRMLogger.Logger.log();
+  
+                WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle wrmTrashRecycleContext = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext;
+
+                // DateTime then = DateTime.Now;
+                // need the solid wast context to query all the addresses in the recycing request table.
+                // for every valid recycling request table entry, fill in an address and save it to the database
+
+                using (wrmTrashRecycleContext)
                     {
-                    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
-
-
-                    WRMLogger.LogBuilder.AppendLine("Start " + justNow.ToString("o", new CultureInfo("en-us")) + " MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
-
-                    WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle wrmTrashRecycleContext = new WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle();
-
-                    // DateTime then = DateTime.Now;
-                    // need the solid wast context to query all the addresses in the recycing request table.
-                    // for every valid recycling request table entry, fill in an address and save it to the database
-                    SolidWaste solidWasteContext = new SolidWaste();
+                    SolidWaste solidWasteContext = WRM_EntityFrameworkContextCache.SolidWasteContext;
                     using (solidWasteContext)
                         {
+                        RecyclingResidentAddressPopulation recyclingAddressCustomerPopulation = new RecyclingResidentAddressPopulation();
 
-                        using (wrmTrashRecycleContext)
+                        if (! recyclingAddressCustomerPopulation.populateRecyclingResidentAddress())
                             {
-
-                            RecyclingResidentAddressPopulation recyclingAddressCustomerPopulation = new RecyclingResidentAddressPopulation(solidWasteContext, wrmTrashRecycleContext);
-
-                            if (recyclingAddressCustomerPopulation.populateRecyclingResidentAddress() ) 
-                                {
-                                BackdoorServiceResidentAddressPopulation backdoorServiceResidentAddressPopulation = new BackdoorServiceResidentAddressPopulation(solidWasteContext, wrmTrashRecycleContext);
-                                if (backdoorServiceResidentAddressPopulation.populateBackdoorServiceAddressCustomer())
-                                    {
-                                    CartPopulation cartPopulation = new CartPopulation(wrmTrashRecycleContext);
-                                    cartPopulation.populateCarts();
-                                    }
-                                }
-
-                            wrmTrashRecycleContext.SaveChanges();
-                            wrmTrashRecycleContext.ChangeTracker.DetectChanges();
-
+                            throw new Exception("RecyclingResidentAddressPopulation failed");
                             }
-
+                        BackdoorServiceResidentAddressPopulation backdoorServiceResidentAddressPopulation = new BackdoorServiceResidentAddressPopulation();
+                        if (! backdoorServiceResidentAddressPopulation.populateBackdoorServiceAddressCustomer())
+                            {
+                            throw new Exception("BackdoorServiceResidentAddressPopulation failed");
+                            }
                         }
-                    
+                    WRMLogger.Logger.logMessageAndDeltaTime("Start CartPopulation", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                    WRMLogger.Logger.log();
+                    CartPopulation cartPopulation = new CartPopulation(wrmTrashRecycleContext);
+                    cartPopulation.populateCarts();
+                    }
+
+                justNow = DateTime.Now;
+                timeDiff = justNow - beforeNow;
+                WRMLogger.LogBuilder.AppendLine("End " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
+                beforeNow = justNow;
+
                 }
 
             catch (Exception ex)
@@ -88,15 +90,17 @@ colorxcel.findColors();
 
                 WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}", ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
                 WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
-                
+
                 Exception inner = ex.InnerException;
-                if (inner != null) { 
-                WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                if (inner != null)
+                    {
+
+                    WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
                     }
 
                 }
             justNow = DateTime.Now;
-            timeDiff = justNow - beforeNow;
+            timeDiff = justNow - startTime;
             WRMLogger.LogBuilder.AppendLine("End " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
             WRMLogger.Logger.log();
 

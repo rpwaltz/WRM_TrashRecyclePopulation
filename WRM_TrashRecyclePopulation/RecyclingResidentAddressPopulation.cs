@@ -13,77 +13,38 @@ namespace WRM_TrashRecyclePopulation
     {
     class RecyclingResidentAddressPopulation : ResidentAddressPopulation
         {
-        private SolidWaste solidWasteContext;
-        private WRM_TrashRecycle wrmTrashRecycleContext;
 
-
-        public RecyclingResidentAddressPopulation(SolidWaste solidWasteContext, WRM_TrashRecycle wrmTrashRecycleContext) : base(solidWasteContext, wrmTrashRecycleContext)
-            {
-            this.solidWasteContext = solidWasteContext;
-            this.wrmTrashRecycleContext = wrmTrashRecycleContext;
-
-            }
 
         public bool populateRecyclingResidentAddress()
             {
             try
                 {
-                DateTime begin = DateTime.Now;
-                DateTime beforeNow = DateTime.Now;
-                DateTime justNow = DateTime.Now;
-                TimeSpan timeDiff = justNow - beforeNow;
-                double loopMillisecondsPast = 0;
-                String logLine;
+                Program.logLine = "Begin Recycling Requests";
+                WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                WRMLogger.Logger.log();
+                
                 int maxToProcess = 0;
-                List<RecyclingRequest> solidWasteRecyclingRequestList = solidWasteContext.RecyclingRequest.ToList();
+                IEnumerable<Kgisaddress> kgisCityResidentAddressList = WRM_TrashRecycleQueries.retrieveKgisCityResidentAddressList();
 
 
-                logLine = "solidWasteContext.RecyclingRequest.ToList";
-//                WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
-
-
-                IEnumerable<KgisResidentAddressView> kgisCityResidentAddressList = Wrm_TrashRecycleQueries.retrieveKgisCityResidentAddress();
-                logLine = "wrm_TrashRecycleQueries.retrieveKgisCityResidentAddress()";
-//                WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
-
-                List<String> requestStatuses = new List<String>() { "APPROVED", "REQUESTED" };
-
-                IEnumerable<RecyclingRequest> orderedSolidWasteRecyclingRequestList = solidWasteRecyclingRequestList.Where(swrrl => requestStatuses.Contains(swrrl.Status)).OrderBy(solidWasteRecyclingRequestList => solidWasteRecyclingRequestList.StreetName).ThenBy(solidWasteRecyclingRequestList => solidWasteRecyclingRequestList.StreetNumber).ThenBy(solidWasteRecyclingRequestList => solidWasteRecyclingRequestList.UnitNumber);
- //               WRMLogger.LogBuilder.AppendLine(kgisCityResidentAddressList.ToList().Count() + " requests " + orderedSolidWasteRecyclingRequestList.Count());
-                timeDiff = justNow - begin;
-                logLine = "solidWasteRecyclingRequestList.Where().solidWasteRecyclingRequestList.OrderBy";
-//                WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
+                IEnumerable<RecyclingRequest> orderedSolidWasteRecyclingRequestList = WRM_TrashRecycleQueries.retrieveRecyclingRequestList();
 
                 foreach (RecyclingRequest recyclingRequest in orderedSolidWasteRecyclingRequestList)
                     {
-                 //   if (maxToProcess >= 1000)
-                 //       {
-                 //
-                 //       break;
-                 //       }
+                    if (maxToProcess%100 == 0)
+                        {
+                        Program.logLine = "Processed Recycling Requests: " + maxToProcess;
+                        WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
+                        }
                     ++maxToProcess;
-                    logLine = "foreach recycling Request";
-//                    WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
 
                     populateResidentAddressFromRequest(recyclingRequest);
-//                    WRMLogger.LogBuilder.AppendLine("Loop Total MilliSeconds passed : " + loopMillisecondsPast.ToString());
-                    beforeNow = justNow;
-//                    WRMLogger.Logger.log();
 
                     }
-                /*
-                WRMLogger.LogBuilder.AppendLine("Before Loop Total MilliSeconds passed : " + timeDiff.TotalMilliseconds);
-                beforeNow = justNow;
 
-
-                justNow = DateTime.Now;
-                timeDiff = justNow - beforeNow;
-                WRMLogger.LogBuilder.AppendLine("End " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
-                beforeNow = justNow;
-                */
-
-                wrmTrashRecycleContext.SaveChanges();
-                wrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                Program.logLine = "Finished Recycling Requests";
+                WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 WRMLogger.Logger.log();
                 return true;
                 }
@@ -93,13 +54,11 @@ namespace WRM_TrashRecyclePopulation
                 WRMLogger.LogBuilder.AppendLine(ex.ToString());
                 WRMLogger.LogBuilder.AppendLine( ex.StackTrace);
                 WRMLogger.Logger.log();
-                throw ex;
                 }
             return false;
             }
 
-        //override public Address buildRequestResidentAddress(RecyclingRequest recyclingRequest, IEnumerator<KgisResidentAddressView> foundKgisResidentAddressEnumerator) { }
-        override public void buildAndSaveTrashRecycleEntitiesFromRequest(dynamic recyclingRequest, IEnumerator<KgisResidentAddressView> foundKgisResidentAddressEnumerator)
+        override public void buildAndSaveTrashRecycleEntitiesFromRequest(dynamic recyclingRequest, IEnumerator<Kgisaddress> foundKgisResidentAddressEnumerator)
             {
 
             if (foundKgisResidentAddressEnumerator.Current == null)
@@ -108,17 +67,18 @@ namespace WRM_TrashRecyclePopulation
 
                 }
 
-            KgisResidentAddressView kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
+            Kgisaddress kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
 
             Address address = buildRecyclingAddress(recyclingRequest, kgisCityResidentAddress);
             address = saveAddress(address);
 
             Resident resident = buildRequestResident(recyclingRequest, address.AddressId);
 
-            resident = saveResident(resident);
+            saveResident(resident);
+
 
             }
-        override public void buildAndSaveTrashRecycleEntitiesFromRequestWithUnits(dynamic recyclingRequest, IEnumerator<KgisResidentAddressView> foundKgisResidentAddressEnumerator)
+        override public void buildAndSaveTrashRecycleEntitiesFromRequestWithUnits(dynamic recyclingRequest, IEnumerator<Kgisaddress> foundKgisResidentAddressEnumerator)
             {
             if (foundKgisResidentAddressEnumerator.Current == null)
                 {
@@ -126,7 +86,7 @@ namespace WRM_TrashRecyclePopulation
 
                 }
 
-            KgisResidentAddressView kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
+            Kgisaddress kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
 
             Address address = buildRecyclingAddress(recyclingRequest, kgisCityResidentAddress);
             address.UnitNumber = recyclingRequest.UnitNumber;
@@ -140,23 +100,28 @@ namespace WRM_TrashRecyclePopulation
             }
 
 
-        private Address buildRecyclingAddress(dynamic recyclingRequest, KgisResidentAddressView kgisCityResidentAddress)
+        private Address buildRecyclingAddress(dynamic recyclingRequest, Kgisaddress kgisCityResidentAddress)
             {
             Address address = buildRequestAddress(recyclingRequest, kgisCityResidentAddress);
 
             address.RecyclingPickup = recyclingRequest.Status.Equals("APPROVED");
-            switch (recyclingRequest.Status)
+            string status = (string)recyclingRequest.Status.Trim();
+            switch (status)
                 {
                 case "APPROVED":
                     address.RecyclingStatus = "APPROVED";
                     break;
-
                 case "REQUESTED":
                     address.RecyclingStatus = "REQUESTED";
                     break;
-
+                case "WITHDRAWN":
+                    address.RecyclingStatus = "WITHDRAWN";
+                    break;
+                case "DISAPPROVED":
+                    address.RecyclingStatus = "REJECTED";
+                    break;
                 default:
-                    throw new Exception("Recycling status undefined");
+                    throw new Exception(" Recycling status :" + recyclingRequest.Status + ": undefined");
                 }
 
 

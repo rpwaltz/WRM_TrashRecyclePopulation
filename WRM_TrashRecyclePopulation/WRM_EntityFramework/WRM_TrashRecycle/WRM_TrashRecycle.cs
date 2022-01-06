@@ -5,6 +5,7 @@ using System;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Configurations;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
 using System.Configuration;
+#nullable disable
 
 #nullable disable
 
@@ -24,8 +25,9 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle
         public virtual DbSet<Address> Address { get; set; }
         public virtual DbSet<BackDoorPickup> BackDoorPickup { get; set; }
         public virtual DbSet<Cart> Cart { get; set; }
-        public virtual DbSet<KgisResidentAddressView> KgisResidentAddressView { get; set; }
+        public virtual DbSet<Kgisaddress> Kgisaddress { get; set; }
         public virtual DbSet<Resident> Resident { get; set; }
+
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             {
             if (!optionsBuilder.IsConfigured)
@@ -35,6 +37,7 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle
 
                 }
             }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.HasAnnotation("Relational:Collation", "SQL_Latin1_General_CP1_CI_AS");
@@ -42,7 +45,7 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle
             modelBuilder.ApplyConfiguration(new Configurations.AddressConfiguration());
             modelBuilder.ApplyConfiguration(new Configurations.BackDoorPickupConfiguration());
             modelBuilder.ApplyConfiguration(new Configurations.CartConfiguration());
-            modelBuilder.ApplyConfiguration(new Configurations.KgisResidentAddressViewConfiguration());
+            modelBuilder.ApplyConfiguration(new Configurations.KgisaddressConfiguration());
             modelBuilder.ApplyConfiguration(new Configurations.ResidentConfiguration());
             OnModelCreatingPartial(modelBuilder);
         }

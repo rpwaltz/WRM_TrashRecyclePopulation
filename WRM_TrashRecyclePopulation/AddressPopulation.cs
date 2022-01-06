@@ -15,26 +15,21 @@ namespace WRM_TrashRecyclePopulation
 
         public Dictionary<string, Address> serviceTrashDayDictionary;
 
-        private SolidWaste solidWasteContext;
-        private WRM_TrashRecycle wrmTrashRecycleContext;
 
         private static Dictionary<string,Address> addressDictionary = new Dictionary<string,Address>();
 
-        public SolidWaste SolidWasteContext { get => solidWasteContext; set => solidWasteContext = value; }
-        public WRM_TrashRecycle WrmTrashRecycleContext { get => wrmTrashRecycleContext; set => wrmTrashRecycleContext = value; }
         public static Dictionary<string, Address> AddressDictionary { get => addressDictionary; set => addressDictionary = value; }
 
-        public AddressPopulation(SolidWaste solidWasteContext, WRM_TrashRecycle wrmTrashRecycleContext)
+        public AddressPopulation()
             {
-            this.solidWasteContext = solidWasteContext;
-            this.wrmTrashRecycleContext = wrmTrashRecycleContext;
+
 
             ServiceTrashDayImporter serviceTrashDayImporter = ServiceTrashDayImporter.getServiceTrashDayImporter();
             this.serviceTrashDayDictionary = serviceTrashDayImporter.addressDictionary;
             }
 
 
-        static public string translateAddressTypeFromKGISAddressUse(KgisResidentAddressView kgisCityResidentAddress)
+        static public string translateAddressTypeFromKGISAddressUse(Kgisaddress kgisCityResidentAddress)
             {
             string addressType = "";
             switch (kgisCityResidentAddress.AddressUseType)
@@ -82,7 +77,7 @@ namespace WRM_TrashRecyclePopulation
             return addressType;
             }
 
-        public Address buildRequestAddress (dynamic request, KgisResidentAddressView kgisCityResidentAddress)
+        public Address buildRequestAddress (dynamic request, Kgisaddress kgisCityResidentAddress)
             {
             Address address = new Address();
             address.AddressType = translateAddressTypeFromKGISAddressUse(kgisCityResidentAddress);
@@ -134,18 +129,17 @@ namespace WRM_TrashRecyclePopulation
             {
             Address foundAddress;
             string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
-            WRMLogger.LogBuilder.AppendLine("addressdictionaryKey " + dictionaryKey);
+
             if (AddressDictionary.TryGetValue(dictionaryKey, out foundAddress))
                 {
                 address = foundAddress;
-                WRMLogger.LogBuilder.AppendLine(address.StreetName + address.StreetNumber + address.UnitNumber + address.ZipCode  + "=" + address.AddressId);
+                WRMLogger.LogBuilder.AppendLine("Already added: [" + address.StreetName + "] ["+ address.StreetNumber + "] [" + address.UnitNumber + "] [" + address.ZipCode  + "=" + address.AddressId);
                 }
             else
-                { 
-                WrmTrashRecycleContext.Add(address);
-                // logBuilder.AppendLine("Add " + request.StreetNumber + "  " + request.StreetName);
-                WrmTrashRecycleContext.SaveChanges();
-                WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                {
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 AddressDictionary.Add(dictionaryKey,address);
                 }
 
