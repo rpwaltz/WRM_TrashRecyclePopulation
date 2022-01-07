@@ -1,5 +1,5 @@
 ﻿{
-   "CodeGenerationMode": 0,
+   "CodeGenerationMode": 2,
    "ContextClassName": "WRM_TrashRecycle",
    "ContextNamespace": null,
    "DefaultDacpacSchema": null,
@@ -34,7 +34,7 @@
          "ObjectType": 0
       }
    ],
-   "UiHint": "apptestdb\\appssql16.WRM_TrashRecycle.dbo",
+   "UiHint": "edimmu\\udug.WRM_TrashRecycle.dbo",
    "UseBoolPropertiesWithoutDefaultSql": false,
    "UseDatabaseNames": false,
    "UseDbContextSplitting": true,

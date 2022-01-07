@@ -19,6 +19,7 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         public string Phone { get; set; }
         public string Email { get; set; }
         public string Note { get; set; }
+        public bool? SendEmailNewsletter { get; set; }
         public string CreateUser { get; set; }
         public DateTime? CreateDate { get; set; }
         public string UpdateUser { get; set; }
