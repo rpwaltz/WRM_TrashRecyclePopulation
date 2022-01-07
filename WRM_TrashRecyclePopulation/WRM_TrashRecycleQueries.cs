@@ -118,75 +118,7 @@ namespace WRM_TrashRecyclePopulation
                 }
             return verified;
             }
-        /*
-        public static Boolean verifyAndCorrectKGISApartmentUnitNumber(ref Address address, ref string[] validUnits)
-            {
 
-            Boolean verified = false;
-            String kgisAddressWhereClause = "";
-            try
-                {
-                kgisAddressWhereClause = formatKGISAddressWhereClause(address);
-                }
-            catch (Exception ex)
-                {
-                return verified;
-                }
-            String KgisCityResidentAddressQuery = String.Format("select count(*)  from KGISAddress where  {0}", kgisAddressWhereClause);
-            WRM_TrashRecycle context = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext;
-            DbConnection connection = context.Database.GetDbConnection();
-            if (connection.State.Equals(ConnectionState.Closed)) { connection.Open(); }
-            using (connection)
-                {
-                using (DbCommand command = connection.CreateCommand())
-                    {
-                    
-                    command.CommandText = KgisCityResidentAddressQuery;
-
-                    DbDataReader dbDataReader = command.ExecuteReader();
-
-                    if (dbDataReader.HasRows)
-                        {
-                        int count = dbDataReader.GetInt32(1);
-                        if (count > 0)
-                            {
-                            verified = true;
-                            }
-                        }
-                    else
-                        {
-                        WRMLogger.LogBuilder.AppendLine("No rows found.");
-                        }
-                    dbDataReader.Close();
-                    }
-                }
-            if (connection.State.Equals(ConnectionState.Open)) { connection.Close(); }
-
-            return verified;
-            }
-
-        private static string formatKGISAddressWhereClause (Address address)
-            {
-
-            if ((address.ZipCode is null || address.StreetName is null ))
-                {
-
-                throw new Exception("Address formatted Incorrectly");
-                }
-            int? addressNumber = address.StreetNumber;
-            String streetName = address.StreetName.ToUpper();
-
-            int zipCode = int.Parse(address.ZipCode);
-
-            string addressNumberQuery = "ADDRESS_NUM = " + address.StreetNumber;
-            string streetNameQuery = "STREET_NAME = '" + address.StreetName + "'";
-            string zipCodeQuery = "ZIP_CODE = " + address.ZipCode;
-
-
-            string  addressWhereClause = String.Format(" {0}  AND {1} and {2}", addressNumberQuery, streetNameQuery, zipCodeQuery);
-            return addressWhereClause;
-            }
-        */
         public static Boolean determineAddressFailure(dynamic request)
             {
 

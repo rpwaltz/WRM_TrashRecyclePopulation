@@ -114,14 +114,11 @@ namespace WRM_TrashRecyclePopulation
                 case "REQUESTED":
                     address.RecyclingStatus = "REQUESTED";
                     break;
-                case "WITHDRAWN":
-                    address.RecyclingStatus = "WITHDRAWN";
-                    break;
                 case "DISAPPROVED":
                     address.RecyclingStatus = "REJECTED";
                     break;
                 default:
-                    throw new Exception(" Recycling status :" + recyclingRequest.Status + ": undefined");
+                    throw new Exception(" Invalid Recycling status :" + recyclingRequest.Status);
                 }
 
 

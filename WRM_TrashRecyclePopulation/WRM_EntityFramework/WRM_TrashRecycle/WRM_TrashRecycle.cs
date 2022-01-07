@@ -33,7 +33,7 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle
             if (!optionsBuilder.IsConfigured)
                 {
                 var connectionString = ConfigurationManager.ConnectionStrings["WRM_TrashRecycle"].ConnectionString;
-                optionsBuilder.UseSqlServer(connectionString);
+                optionsBuilder.UseSqlServer(connectionString,options => options.MinBatchSize(1).MaxBatchSize(1));
 
                 }
             }

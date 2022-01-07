@@ -54,6 +54,7 @@ namespace WRM_TrashRecyclePopulation
                         logStream.WriteLine(logBuilder);
                         }
                     }
+                
                 }
             logBuilder.Clear();
             }

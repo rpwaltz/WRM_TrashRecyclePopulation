@@ -132,8 +132,23 @@ namespace WRM_TrashRecyclePopulation
 
             if (AddressDictionary.TryGetValue(dictionaryKey, out foundAddress))
                 {
+                if (((address.UpdateDate ?? Program.posixEpoche) > (foundAddress.UpdateDate ?? Program.posixEpoche)))
+                    {
+                    foundAddress.RecyclingStatus = address.RecyclingStatus;
+                    foundAddress.UpdateDate = address.UpdateDate;
+                    foundAddress.CreateDate = address.CreateDate;
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(foundAddress);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                    }
+                else
+                    {
+                    
+                    string logMessage = string.Format("Unable to determine if Address changed StreetNumber {0}  StreetName {1}  UnitNumber {2} CreateDate {3} UpdateDate {4}\n",
+                       address.StreetNumber,  address.StreetName,  address.UnitNumber, address.CreateDate, address.CreateDate);
+                    WRMLogger.LogBuilder.Append(logMessage);
+                    }
                 address = foundAddress;
-                WRMLogger.LogBuilder.AppendLine("Already added: [" + address.StreetName + "] ["+ address.StreetNumber + "] [" + address.UnitNumber + "] [" + address.ZipCode  + "=" + address.AddressId);
                 }
             else
                 {

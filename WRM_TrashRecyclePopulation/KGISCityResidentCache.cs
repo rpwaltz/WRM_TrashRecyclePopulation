@@ -42,7 +42,6 @@ namespace WRM_TrashRecyclePopulation
                         kgisCityResidentAddressList.Add(Clone(kgisAddress));
                         }
 
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext = null;
                     orderedKgisCityResidentAddressList = kgisCityResidentAddressList.OrderBy(kgisCityResidentAddressList => kgisCityResidentAddressList.StreetName).ThenBy(kgisCityResidentAddressList => kgisCityResidentAddressList.AddressNum).ThenBy(kgisCityResidentAddressList => kgisCityResidentAddressList.Unit);
                     }
                 return orderedKgisCityResidentAddressList;

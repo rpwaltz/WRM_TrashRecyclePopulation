@@ -213,6 +213,14 @@ namespace WRM_TrashRecyclePopulation
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                     backdoorPickup = foundBackdoorPickup;
                     }
+                else
+                    {
+                    
+                    string logMessage = string.Format("Unable to determine if Backdoor Pickup changed from Name {0} {1} Address {2}  {3} With Status {4} created {5} updated {6} TO Name {7} {8} Address {9}  {10} With Status {11} created {12} updated {13}\n",
+                        backdoorPickup.Resident.FirstName, backdoorPickup.Resident.LastName, backdoorPickup.Address.StreetNumber, backdoorPickup.Address.StreetName, backdoorPickup.Address.UnitNumber, backdoorPickup.BackdoorStatus, backdoorPickup.CreateDate.ToString(), backdoorPickup.UpdateDate.ToString(),
+                        foundBackdoorPickup.Resident.FirstName, foundBackdoorPickup.Resident.LastName, foundBackdoorPickup.Address.StreetNumber, foundBackdoorPickup.Address.StreetName, foundBackdoorPickup.Address.UnitNumber, foundBackdoorPickup.BackdoorStatus, foundBackdoorPickup.CreateDate.ToString(), foundBackdoorPickup.UpdateDate.ToString());
+                    WRMLogger.LogBuilder.Append(logMessage);
+                    }
                 }
             else
                 {

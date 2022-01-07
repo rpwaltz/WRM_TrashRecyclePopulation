@@ -23,7 +23,7 @@ namespace WRM_TrashRecyclePopulation
         abstract public void buildAndSaveTrashRecycleEntitiesFromRequestWithUnits(dynamic request, IEnumerator<Kgisaddress> foundKgisResidentAddressEnumerator);
 
         static private Regex reducePhoneNumber = new Regex("[^\\d]");
-        static private Regex formatPhoneNumber = new Regex(@"(\d{3})(\d{3})(\d{4})");
+
         public Resident buildRequestResident(dynamic request, int addressId)
             {
             Resident resident = new Resident();
@@ -33,7 +33,7 @@ namespace WRM_TrashRecyclePopulation
             if (!String.IsNullOrWhiteSpace(resident.Phone) )
                 { 
                 string phoneNumber = reducePhoneNumber.Replace(request.PhoneNumber, string.Empty).Trim();
-                resident.Phone = formatPhoneNumber.Replace(phoneNumber, "($1) $2-$3");
+                resident.Phone = phoneNumber;
                 }
             resident.AddressId = addressId;
             resident.CreateDate = request.CreationDate;
@@ -59,6 +59,8 @@ namespace WRM_TrashRecyclePopulation
                     foundResident.Email = resident.Email;
                     foundResident.Note = resident.Note;
                     foundResident.Phone = resident.Phone;
+                    foundResident.UpdateDate = resident.UpdateDate;
+                    foundResident.CreateDate = resident.CreateDate;
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(foundResident);
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
@@ -68,7 +70,7 @@ namespace WRM_TrashRecyclePopulation
                     string logMessage = string.Format("Unable to determine if Resident changed from Name {0} {1} created {2} updated {3} to Name {4} {5} created {6} updated {7}\n", 
                         foundResident.FirstName, foundResident.LastName, foundResident.CreateDate.ToString(), foundResident.UpdateDate.ToString(),
                         resident.FirstName, resident.LastName, resident.CreateDate.ToString(), resident.UpdateDate.ToString());
-                    WRMLogger.Logger.logMessageAndDeltaTime(logMessage, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                    WRMLogger.LogBuilder.Append(logMessage);
                     }
                 resident = foundResident;
                 }
