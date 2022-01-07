@@ -4,6 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle;
+using Microsoft.EntityFrameworkCore;
+using System.Configuration;
+using WRM_TrashRecyclePopulation.WRM_EntityFramework.SolidWaste;
 
 namespace WRM_TrashRecyclePopulation
     {
@@ -17,7 +20,10 @@ namespace WRM_TrashRecyclePopulation
                 {
                 if (wrmTrashRecycleContext == null)
                     {
-                    wrmTrashRecycleContext = new WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle();
+                    var connectionString = ConfigurationManager.ConnectionStrings["WRM_TrashRecycleDatabase"].ConnectionString;
+                    
+                    var contextOptions = new DbContextOptionsBuilder<WRM_TrashRecycle>().UseSqlServer(connectionString).Options;
+                    wrmTrashRecycleContext = new WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle(contextOptions);
                     }
                 return wrmTrashRecycleContext;
                 }
@@ -32,7 +38,10 @@ namespace WRM_TrashRecyclePopulation
                 {
                 if (solidWasteContext == null)
                     {
-                    solidWasteContext = new WRM_EntityFramework.SolidWaste.SolidWaste();
+                    var connectionString = ConfigurationManager.ConnectionStrings["SolidWasteDatabase"].ConnectionString;
+                    DbContextOptions<SolidWaste> contextOptions = new DbContextOptionsBuilder<SolidWaste>().UseSqlServer(connectionString, options => options.MinBatchSize(1).MaxBatchSize(1)).Options;
+
+                    solidWasteContext = new WRM_EntityFramework.SolidWaste.SolidWaste(contextOptions);
                     }
                 return solidWasteContext;
                 }
