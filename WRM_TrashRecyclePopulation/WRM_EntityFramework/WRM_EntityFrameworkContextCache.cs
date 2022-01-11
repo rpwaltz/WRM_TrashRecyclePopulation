@@ -39,7 +39,7 @@ namespace WRM_TrashRecyclePopulation
                 if (solidWasteContext == null)
                     {
                     var connectionString = ConfigurationManager.ConnectionStrings["SolidWasteDatabase"].ConnectionString;
-                    DbContextOptions<SolidWaste> contextOptions = new DbContextOptionsBuilder<SolidWaste>().UseSqlServer(connectionString, options => options.MinBatchSize(1).MaxBatchSize(1)).Options;
+                    DbContextOptions<SolidWaste> contextOptions = new DbContextOptionsBuilder<SolidWaste>().UseSqlServer(connectionString).Options;
 
                     solidWasteContext = new WRM_EntityFramework.SolidWaste.SolidWaste(contextOptions);
                     }

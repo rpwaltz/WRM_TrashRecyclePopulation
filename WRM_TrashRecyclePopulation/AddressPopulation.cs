@@ -29,10 +29,10 @@ namespace WRM_TrashRecyclePopulation
             }
 
 
-        static public string translateAddressTypeFromKGISAddressUse(Kgisaddress kgisCityResidentAddress)
+        static public string translateAddressTypeFromKGISAddressUse(KGISAddress kgisCityResidentAddress)
             {
             string addressType = "";
-            switch (kgisCityResidentAddress.AddressUseType)
+            switch (kgisCityResidentAddress.ADDRESS_USE_TYPE)
                 {
                 case "DWELLING, MULTI-FAMILY":
                 case "ACCESSORY DWELLING UNIT":
@@ -67,56 +67,53 @@ namespace WRM_TrashRecyclePopulation
                     break;
 
                 default:
-                    WRMLogger.LogBuilder.Append(kgisCityResidentAddress.AddressUseType + " ");
+                    WRMLogger.LogBuilder.Append(kgisCityResidentAddress.ADDRESS_USE_TYPE + " ");
                     break;
                 }
             if (String.IsNullOrEmpty(addressType))
                 {
-                throw new NotSupportedException("Cannot recognize Property Type " + kgisCityResidentAddress.AddressUseType);
+                throw new NotSupportedException("Property Type may not be null");
                 }
             return addressType;
             }
 
-        public Address buildRequestAddress (dynamic request, Kgisaddress kgisCityResidentAddress)
+        public Address buildRequestAddress (dynamic request, KGISAddress kgisCityResidentAddress)
             {
             Address address = new Address();
-            address.AddressType = translateAddressTypeFromKGISAddressUse(kgisCityResidentAddress);
-            address.GisparcelId = kgisCityResidentAddress.Parcelid;
 
-            address.StreetName = IdentifierProvider.normalizeStreetName(kgisCityResidentAddress.StreetName);
-            address.StreetNumber = Convert.ToInt32(kgisCityResidentAddress.AddressNum);
-            address.ZipCode = kgisCityResidentAddress.ZipCode.ToString();
-            address.GisaddressUseType = kgisCityResidentAddress.AddressUseType;
+            address.StreetName = IdentifierProvider.normalizeStreetName(kgisCityResidentAddress.STREET_NAME);
+            if (String.IsNullOrEmpty(address.StreetName))
+                {
+                throw new NullReferenceException("Street Name may not be null.");
+                }
 
-            address.Gislatitude = kgisCityResidentAddress.Latitude;
-            address.Gislongitude = kgisCityResidentAddress.Longitude;
-            address.GispointX = kgisCityResidentAddress.PointX;
-            address.GispointY = kgisCityResidentAddress.PointY;
-
+            address.StreetNumber = Convert.ToInt32(kgisCityResidentAddress.ADDRESS_NUM);
+            if (address.StreetNumber == 0)
+                {
+                throw new NullReferenceException("Street Number may not be null.");
+                }
+            address.ZipCode = kgisCityResidentAddress.ZIP_CODE.ToString();
+            address.UnitNumber = null;
+            if (request.UnitNumber != null)
+                address.UnitNumber = request.UnitNumber;
             string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
 
             if (serviceTrashDayDictionary.ContainsKey(dictionaryKey))
                 {
-
-                Address serviceDayAddress = serviceTrashDayDictionary[dictionaryKey];
-                if (serviceDayAddress.RecyclingPickup ?? false)
+                address = null;
+                if (!serviceTrashDayDictionary.TryGetValue(dictionaryKey, out address))
                     {
-                    address.RecycleDayOfWeek = serviceDayAddress.RecycleDayOfWeek;
-                    address.RecycleFrequency = serviceDayAddress.RecycleFrequency;
+                    throw new Exception("Address Dictionary contains key " + dictionaryKey + ", but unable to retreive address");
                     }
-
-                if (address.TrashPickup ?? false)
-                    {
-                    address.TrashPickup = serviceDayAddress.TrashPickup;
-                    address.TrashDayOfWeek = serviceDayAddress.TrashDayOfWeek;
-                    }
-
                 }
-            else
-                {
-                // log that the address does not have a service day
-                }
+            address.AddressType = translateAddressTypeFromKGISAddressUse(kgisCityResidentAddress);
+            address.GISParcelID = kgisCityResidentAddress.PARCELID;
+            address.GISAddressUseType = kgisCityResidentAddress.ADDRESS_USE_TYPE;
 
+            address.GISLatitude = kgisCityResidentAddress.LATITUDE;
+            address.GISLongitude = kgisCityResidentAddress.LONGITUDE;
+            address.GISPointX = kgisCityResidentAddress.POINT_X;
+            address.GISPointY = kgisCityResidentAddress.POINT_Y;
             address.Comment = request.Comments;
             address.CreateDate = request.CreationDate;
             address.CreateUser = request.CreatedBy;
@@ -124,41 +121,6 @@ namespace WRM_TrashRecyclePopulation
             address.UpdateUser = request.LastUpdatedBy;
             return address;
 
-            }
-        public Address saveAddress(Address address)
-            {
-            Address foundAddress;
-            string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
-
-            if (AddressDictionary.TryGetValue(dictionaryKey, out foundAddress))
-                {
-                if (((address.UpdateDate ?? Program.posixEpoche) > (foundAddress.UpdateDate ?? Program.posixEpoche)))
-                    {
-                    foundAddress.RecyclingStatus = address.RecyclingStatus;
-                    foundAddress.UpdateDate = address.UpdateDate;
-                    foundAddress.CreateDate = address.CreateDate;
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(foundAddress);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                    }
-                else
-                    {
-                    
-                    string logMessage = string.Format("Unable to determine if Address changed StreetNumber {0}  StreetName {1}  UnitNumber {2} CreateDate {3} UpdateDate {4}\n",
-                       address.StreetNumber,  address.StreetName,  address.UnitNumber, address.CreateDate, address.CreateDate);
-                    WRMLogger.LogBuilder.Append(logMessage);
-                    }
-                address = foundAddress;
-                }
-            else
-                {
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                AddressDictionary.Add(dictionaryKey,address);
-                }
-
-            return address;
             }
         }
     }

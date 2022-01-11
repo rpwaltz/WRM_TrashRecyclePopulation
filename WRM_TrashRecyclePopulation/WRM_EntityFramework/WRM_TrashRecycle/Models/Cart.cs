@@ -2,24 +2,46 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
 {
     public partial class Cart
     {
-        public int CartId { get; set; }
-        public int? AddressId { get; set; }
+        [Key]
+        public int CartID { get; set; }
+        public int? AddressID { get; set; }
+        [Required]
+        [StringLength(256)]
+        [Unicode(false)]
         public string CartSerialNumber { get; set; }
+        [StringLength(10)]
+        [Unicode(false)]
         public string CartSize { get; set; }
+        [Column(TypeName = "datetime")]
         public DateTime? SerialNumberReceivedDate { get; set; }
+        [StringLength(512)]
+        [Unicode(false)]
         public string Note { get; set; }
         public bool? IsRecyclingCart { get; set; }
+        [StringLength(50)]
+        [Unicode(false)]
         public string CartStatus { get; set; }
+        [StringLength(100)]
+        [Unicode(false)]
         public string CreateUser { get; set; }
+        [Column(TypeName = "datetime")]
         public DateTime? CreateDate { get; set; }
+        [StringLength(100)]
+        [Unicode(false)]
         public string UpdateUser { get; set; }
+        [Column(TypeName = "datetime")]
         public DateTime? UpdateDate { get; set; }
 
+        [ForeignKey(nameof(AddressID))]
+        [InverseProperty("Cart")]
         public virtual Address Address { get; set; }
     }
 }

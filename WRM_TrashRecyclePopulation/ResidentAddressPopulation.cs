@@ -12,92 +12,48 @@ namespace WRM_TrashRecyclePopulation
     {
     abstract class ResidentAddressPopulation : AddressPopulation
         {
-        static private Dictionary<string,Resident> residentDictionary = new Dictionary<string,Resident>();
-        static private IEnumerable<Kgisaddress> kgisCityResidentAddressList = WRM_TrashRecycleQueries.retrieveKgisCityResidentAddressList();
+        static private Dictionary<string, Resident> residentDictionary = new Dictionary<string, Resident>();
+        static private IEnumerable<KGISAddress> kgisCityResidentAddressList = WRM_TrashRecycleQueries.retrieveKgisCityResidentAddressList();
 
 
         public static Dictionary<string, Resident> ResidentDictionary { get => residentDictionary; set => residentDictionary = value; }
 
-        abstract public void buildAndSaveTrashRecycleEntitiesFromRequest(dynamic request, IEnumerator<Kgisaddress> foundKgisResidentAddressEnumerator);
+        abstract public void buildAndSaveTrashRecycleEntitiesFromRequest(dynamic request, IEnumerator<KGISAddress> foundKgisResidentAddressEnumerator, int numberOfUnits);
 
-        abstract public void buildAndSaveTrashRecycleEntitiesFromRequestWithUnits(dynamic request, IEnumerator<Kgisaddress> foundKgisResidentAddressEnumerator);
 
         static private Regex reducePhoneNumber = new Regex("[^\\d]");
 
-        public Resident buildRequestResident(dynamic request, int addressId)
+        public Resident buildRequestResident(dynamic request)
             {
             Resident resident = new Resident();
             resident.Email = request.Email;
             resident.FirstName = request.FirstName;
             resident.LastName = request.LastName;
-            if (!String.IsNullOrWhiteSpace(resident.Phone) )
-                { 
+            if (!String.IsNullOrWhiteSpace(resident.Phone))
+                {
                 string phoneNumber = reducePhoneNumber.Replace(request.PhoneNumber, string.Empty).Trim();
                 resident.Phone = phoneNumber;
                 }
-            resident.AddressId = addressId;
             resident.CreateDate = request.CreationDate;
             resident.CreateUser = request.CreatedBy;
             resident.UpdateDate = request.LastUpdatedDate;
             resident.UpdateUser = request.LastUpdatedBy;
             return resident;
             }
-        public Resident saveResident(Resident resident)
-            {
-
-  //          string residentDictionaryIdentifier = IdentifierProvider.provideIdentifierFromResident(resident.FirstName, resident.LastName, resident.Phone, resident.Email);
-
-            string residentDictionaryKey = resident.AddressId.ToString();
-
-            Resident foundResident;
-            if (residentDictionary.TryGetValue(residentDictionaryKey, out foundResident))
-                {
-                if ( ((resident.UpdateDate ?? Program.posixEpoche) > (foundResident.UpdateDate ?? Program.posixEpoche))  )
-                    {
-                    foundResident.FirstName = resident.FirstName;
-                    foundResident.LastName = resident.LastName;
-                    foundResident.Email = resident.Email;
-                    foundResident.Note = resident.Note;
-                    foundResident.Phone = resident.Phone;
-                    foundResident.UpdateDate = resident.UpdateDate;
-                    foundResident.CreateDate = resident.CreateDate;
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(foundResident);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                    }
-                else
-                    {
-                    string logMessage = string.Format("Unable to determine if Resident changed from Name {0} {1} created {2} updated {3} to Name {4} {5} created {6} updated {7}\n", 
-                        foundResident.FirstName, foundResident.LastName, foundResident.CreateDate.ToString(), foundResident.UpdateDate.ToString(),
-                        resident.FirstName, resident.LastName, resident.CreateDate.ToString(), resident.UpdateDate.ToString());
-                    WRMLogger.LogBuilder.Append(logMessage);
-                    }
-                resident = foundResident;
-                }
-            else
-                {
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(resident);
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                residentDictionary.Add(residentDictionaryKey, resident);
-                }
-            return resident;
-            }
-
         public void populateResidentAddressFromRequest(dynamic request)
             {
-            if (String.IsNullOrEmpty(request.StreetName) )
+            if (String.IsNullOrEmpty(request.StreetName))
                 {
                 return;
                 }
-            request.StreetName =  request.StreetName.ToUpper().Trim();
+            request.StreetName = request.StreetName.ToUpper().Trim();
 
-            IEnumerable<Kgisaddress> foundKgisResidentAddress =
+            IEnumerable<KGISAddress> foundKgisResidentAddress =
                 from req in kgisCityResidentAddressList
-                where Decimal.ToInt32(req.AddressNum ?? 0) == request.StreetNumber && req.StreetName.Equals(request.StreetName) && req.Jurisdiction == 1 && req.AddressStatus == 2
+                where Decimal.ToInt32(req.ADDRESS_NUM ?? 0) == request.StreetNumber && req.STREET_NAME.Equals(request.StreetName) && req.JURISDICTION == 1 && req.ADDRESS_STATUS == 2
                 select req;
 
-           IEnumerator<Kgisaddress> foundKgisResidentAddressEnumerator = foundKgisResidentAddress.GetEnumerator();
+            IEnumerator<KGISAddress> foundKgisResidentAddressEnumerator = foundKgisResidentAddress.GetEnumerator();
 
 
             int countFoundAddresses = foundKgisResidentAddress.Count();
@@ -112,14 +68,15 @@ namespace WRM_TrashRecyclePopulation
                         }
                     else
                         {
-                        WRMLogger.LogBuilder.AppendLine(" ADDRESS DOES NOT EXIST FOR [" + request.StreetNumber + "] [" + request.StreetNamePrefix + "] ["  + request.StreetName + "] [" + request.StreetNameSuffix + "] [" + request.StreetSuffixDirection + "] [" + request.UnitNumber + "]");
+                        WRMLogger.LogBuilder.AppendLine(" ADDRESS DOES NOT EXIST FOR [" + request.StreetNumber + "] [" + request.StreetNamePrefix + "] [" + request.StreetName + "] [" + request.StreetNameSuffix + "] [" + request.StreetSuffixDirection + "] [" + request.UnitNumber + "]");
                         }
 
                     break;
                 case 1:
                     try
                         {
-                        buildAndSaveTrashRecycleEntitiesFromRequest(request, foundKgisResidentAddressEnumerator);
+                        countFoundAddresses = 0;
+                        buildAndSaveTrashRecycleEntitiesFromRequest(request, foundKgisResidentAddressEnumerator, countFoundAddresses);
 
 
                         }
@@ -132,7 +89,7 @@ namespace WRM_TrashRecyclePopulation
                         Exception inner = ex.InnerException;
                         if (inner != null)
                             {
-
+                            WRMLogger.LogBuilder.AppendLine("Inner Exception");
                             WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
                             }
                         }
@@ -144,14 +101,26 @@ namespace WRM_TrashRecyclePopulation
                 case 4:
                     try
                         {
-                        buildAndSaveTrashRecycleEntitiesFromRequestWithUnits(request, foundKgisResidentAddressEnumerator);
- 
+                        buildAndSaveTrashRecycleEntitiesFromRequest(request, foundKgisResidentAddressEnumerator, countFoundAddresses);
+
+
                         }
                     catch (Exception ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine(ex.Message +  "ADDRESS WITH UNIT IS NOT A VALID TYPE [" + request.StreetNumber + "] [" + request.StreetNamePrefix + "] [" + request.StreetName + "] [" + request.StreetNameSuffix + "] [" + request.StreetSuffixDirection + "] [" + request.UnitNumber + "]");
+                        WRMLogger.LogBuilder.AppendLine(ex.Message + "ADDRESS WITH UNIT IS NOT A VALID TYPE [" + request.StreetNumber + "] [" + request.StreetNamePrefix + "] [" + request.StreetName + "] [" + request.StreetNameSuffix + "] [" + request.StreetSuffixDirection + "] [" + request.UnitNumber + "]");
+                        WRMLogger.LogBuilder.AppendLine(" ADDRESS FAILED [" + request.StreetNumber + "] [" + request.StreetNamePrefix + "] [" + request.StreetName + "] [" + request.StreetNameSuffix + "] [" + request.StreetSuffixDirection + "] [" + request.UnitNumber + "]");
+                        WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}", ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
+                        WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+
+                        Exception inner = ex.InnerException;
+                        if (inner != null)
+                            {
+                            WRMLogger.LogBuilder.AppendLine("Inner Exception");
+                            WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                            }
                         }
                     break;
+
                 default:
                     WRMLogger.LogBuilder.AppendLine("MORE THAN FOUR UNITS [" + request.StreetNumber + "] [" + request.StreetNamePrefix + "] [" + request.StreetName + "] [" + request.StreetNameSuffix + "] [" + request.StreetSuffixDirection + "] [" + request.UnitNumber + "] has more than 4  units!");
                     break;

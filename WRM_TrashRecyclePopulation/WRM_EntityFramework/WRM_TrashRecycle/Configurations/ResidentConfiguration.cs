@@ -13,45 +13,10 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
     {
         public void Configure(EntityTypeBuilder<Resident> entity)
         {
-            entity.Property(e => e.ResidentId).HasColumnName("ResidentID");
-
-            entity.Property(e => e.AddressId).HasColumnName("AddressID");
-
-            entity.Property(e => e.CreateDate).HasColumnType("datetime");
-
-            entity.Property(e => e.CreateUser)
-                .HasMaxLength(100)
-                .IsUnicode(false);
-
-            entity.Property(e => e.Email)
-                .HasMaxLength(250)
-                .IsUnicode(false);
-
-            entity.Property(e => e.FirstName)
-                .HasMaxLength(100)
-                .IsUnicode(false);
-
-            entity.Property(e => e.LastName)
-                .IsRequired()
-                .HasMaxLength(100)
-                .IsUnicode(false);
-
-            entity.Property(e => e.Note).HasColumnType("text");
-
-            entity.Property(e => e.Phone)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-
-            entity.Property(e => e.UpdateDate).HasColumnType("datetime");
-
-            entity.Property(e => e.UpdateUser)
-                .HasMaxLength(100)
-                .IsUnicode(false);
-
             entity.HasOne(d => d.Address)
                 .WithMany(p => p.Resident)
-                .HasForeignKey(d => d.AddressId)
-                .HasConstraintName("FK__Resident__Addres__59FA5E80");
+                .HasForeignKey(d => d.AddressID)
+                .HasConstraintName("FK_Resident_AddressID");
 
             OnConfigurePartial(entity);
         }

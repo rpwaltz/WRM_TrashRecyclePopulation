@@ -10,10 +10,10 @@ namespace WRM_TrashRecyclePopulation
     {
     public class KGISCityResidentCache
         {
-        static private IEnumerable<Kgisaddress> orderedKgisCityResidentAddressList = null;
+        static private IEnumerable<KGISAddress> orderedKgisCityResidentAddressList = null;
         //static public KgisCityResidentAddress KGISCityResidentCache = null;
 
-        public static IEnumerable<Kgisaddress> getKGISCityResidentCache()
+        public static IEnumerable<KGISAddress> getKGISCityResidentCache()
             {
             if (orderedKgisCityResidentAddressList == null)
                 {
@@ -25,24 +25,24 @@ namespace WRM_TrashRecyclePopulation
 
         private class KgisCityResidentAddress
             {
-            static private List<Kgisaddress> kgisCityResidentAddressList = null;
+            static private List<KGISAddress> kgisCityResidentAddressList = null;
             public KgisCityResidentAddress()
                 {
                 }
-            public IEnumerable<Kgisaddress> retrieveKgisCityResidentAddressList()
+            public IEnumerable<KGISAddress> retrieveKgisCityResidentAddressList()
                 {
 
                 if (kgisCityResidentAddressList == null)
                     {
-                    kgisCityResidentAddressList = new List<Kgisaddress>();
+                    kgisCityResidentAddressList = new List<KGISAddress>();
                     WRM_TrashRecycle context = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext;
 
-                    foreach (Kgisaddress kgisAddress in context.Kgisaddress.ToList())
+                    foreach (KGISAddress KGISAddress in context.KGISAddress.ToList())
                         {
-                        kgisCityResidentAddressList.Add(Clone(kgisAddress));
+                        kgisCityResidentAddressList.Add(Clone(KGISAddress));
                         }
 
-                    orderedKgisCityResidentAddressList = kgisCityResidentAddressList.OrderBy(kgisCityResidentAddressList => kgisCityResidentAddressList.StreetName).ThenBy(kgisCityResidentAddressList => kgisCityResidentAddressList.AddressNum).ThenBy(kgisCityResidentAddressList => kgisCityResidentAddressList.Unit);
+                    orderedKgisCityResidentAddressList = kgisCityResidentAddressList.OrderBy(kgisCityResidentAddressList => kgisCityResidentAddressList.STREET_NAME).ThenBy(kgisCityResidentAddressList => kgisCityResidentAddressList.ADDRESS_NUM).ThenBy(kgisCityResidentAddressList => kgisCityResidentAddressList.UNIT);
                     }
                 return orderedKgisCityResidentAddressList;
                 }

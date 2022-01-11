@@ -13,52 +13,16 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
     {
         public void Configure(EntityTypeBuilder<BackDoorPickup> entity)
         {
-            entity.Property(e => e.BackDoorPickupId).HasColumnName("BackDoorPickupID");
-
-            entity.Property(e => e.AddressId).HasColumnName("AddressID");
-
-            entity.Property(e => e.BackdoorApprovalDate).HasColumnType("datetime");
-
-            entity.Property(e => e.BackdoorStatus)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-
-            entity.Property(e => e.BackdoorStatusDate).HasColumnType("datetime");
-
-            entity.Property(e => e.BackdoorType)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-
-            entity.Property(e => e.BackdoorWithdrawalDate).HasColumnType("datetime");
-
-            entity.Property(e => e.CreateDate).HasColumnType("datetime");
-
-            entity.Property(e => e.CreateUser)
-                .HasMaxLength(100)
-                .IsUnicode(false);
-
-            entity.Property(e => e.Note)
-                .HasMaxLength(512)
-                .IsUnicode(false);
-
-            entity.Property(e => e.ResidentId).HasColumnName("ResidentID");
-
-            entity.Property(e => e.UpdateDate).HasColumnType("datetime");
-
-            entity.Property(e => e.UpdateUser)
-                .HasMaxLength(100)
-                .IsUnicode(false);
-
             entity.HasOne(d => d.Address)
                 .WithMany(p => p.BackDoorPickup)
-                .HasForeignKey(d => d.AddressId)
-                .HasConstraintName("FK__BackDoorP__Addre__534D60F1");
+                .HasForeignKey(d => d.AddressID)
+                .HasConstraintName("FK_BackDoorPickup_AddressID");
 
             entity.HasOne(d => d.Resident)
                 .WithMany(p => p.BackDoorPickup)
-                .HasForeignKey(d => d.ResidentId)
+                .HasForeignKey(d => d.ResidentID)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK__BackDoorP__Resid__5441852A");
+                .HasConstraintName("FK_BackDoorPickup_ResidentID");
 
             OnConfigurePartial(entity);
         }

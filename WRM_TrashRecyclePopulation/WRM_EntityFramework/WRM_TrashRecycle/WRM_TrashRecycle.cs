@@ -23,7 +23,7 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle
         public virtual DbSet<Address> Address { get; set; }
         public virtual DbSet<BackDoorPickup> BackDoorPickup { get; set; }
         public virtual DbSet<Cart> Cart { get; set; }
-        public virtual DbSet<Kgisaddress> Kgisaddress { get; set; }
+        public virtual DbSet<KGISAddress> KGISAddress { get; set; }
         public virtual DbSet<Resident> Resident { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -31,7 +31,7 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle
             modelBuilder.ApplyConfiguration(new Configurations.AddressConfiguration());
             modelBuilder.ApplyConfiguration(new Configurations.BackDoorPickupConfiguration());
             modelBuilder.ApplyConfiguration(new Configurations.CartConfiguration());
-            modelBuilder.ApplyConfiguration(new Configurations.KgisaddressConfiguration());
+            modelBuilder.ApplyConfiguration(new Configurations.KGISAddressConfiguration());
             modelBuilder.ApplyConfiguration(new Configurations.ResidentConfiguration());
 
             OnModelCreatingPartial(modelBuilder);

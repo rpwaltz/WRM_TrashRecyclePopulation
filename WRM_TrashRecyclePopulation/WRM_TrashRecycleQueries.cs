@@ -42,8 +42,8 @@ namespace WRM_TrashRecyclePopulation
         static private IEnumerable<BackdoorServiceRequest> orderedSolidWasteBackdoorRequestList = null;
         static private IEnumerable<RecyclingRequest> orderedRecyclingRequestList = null;
 
-        static private IEnumerable<Kgisaddress> kgisCityResidentAddressList = KGISCityResidentCache.getKGISCityResidentCache();
-        public static IEnumerable<Kgisaddress> retrieveKgisCityResidentAddressList()
+        static private IEnumerable<KGISAddress> kgisCityResidentAddressList = KGISCityResidentCache.getKGISCityResidentCache();
+        public static IEnumerable<KGISAddress> retrieveKgisCityResidentAddressList()
             {
             return KGISCityResidentCache.getKGISCityResidentCache();
             }
@@ -75,21 +75,21 @@ namespace WRM_TrashRecyclePopulation
                 }
             return orderedRecyclingRequestList;
             }
-        public static List<Kgisaddress> findKGISAddressList(Address address)
+        public static List<KGISAddress> findKGISAddressList(Address address)
             {
             decimal? addressNumber = address.StreetNumber;
             String streetName = address.StreetName.ToUpper().Trim();
 
             int zipCode = int.Parse(address.ZipCode);
 
-            IEnumerable<Kgisaddress> findKgisResidentAddress =
-                from kgisAddress in kgisCityResidentAddressList
-                where Decimal.ToInt32(kgisAddress.AddressNum ?? 0) == addressNumber
-                   && kgisAddress.StreetName.Equals(streetName)
-                   && kgisAddress.ZipCode == zipCode
-                   && kgisAddress.Jurisdiction == 1
-                   && kgisAddress.AddressStatus == 2
-                select kgisAddress;
+            IEnumerable<KGISAddress> findKgisResidentAddress =
+                from KGISAddress in kgisCityResidentAddressList
+                where Decimal.ToInt32(KGISAddress.ADDRESS_NUM ?? 0) == addressNumber
+                   && KGISAddress.STREET_NAME.Equals(streetName)
+                   && KGISAddress.ZIP_CODE == zipCode
+                   && KGISAddress.JURISDICTION == 1
+                   && KGISAddress.ADDRESS_STATUS == 2
+                select KGISAddress;
             return findKgisResidentAddress.ToList();
 
             }
@@ -98,7 +98,7 @@ namespace WRM_TrashRecyclePopulation
 
             Boolean verified = false;
 
-            List<Kgisaddress> myTableResults = findKGISAddressList(address);
+            List<KGISAddress> myTableResults = findKGISAddressList(address);
             if (myTableResults.Count > 0)
                 {
                 verified = true;
@@ -111,7 +111,7 @@ namespace WRM_TrashRecyclePopulation
 
             Boolean verified = false;
             
-            List<Kgisaddress> myTableResults = findKGISAddressList(address);
+            List<KGISAddress> myTableResults = findKGISAddressList(address);
             if (myTableResults.Count < 5)
                 {
                 verified = true;
@@ -129,28 +129,28 @@ namespace WRM_TrashRecyclePopulation
             String streetName = request.StreetName.ToUpper();
 
 
-            IEnumerable<Kgisaddress> findKgisResidentAddress =
-                from kgisAddress in kgisCityResidentAddressList
-                where Decimal.ToInt32(kgisAddress.AddressNum ?? 0) == addressNumber
-                   && kgisAddress.StreetName.Equals(streetName)
-                select kgisAddress;
-            List<Kgisaddress> myTableResults = findKgisResidentAddress.ToList();
+            IEnumerable<KGISAddress> findKgisResidentAddress =
+                from KGISAddress in kgisCityResidentAddressList
+                where Decimal.ToInt32(KGISAddress.ADDRESS_NUM ?? 0) == addressNumber
+                   && KGISAddress.STREET_NAME.Equals(streetName)
+                select KGISAddress;
+            List<KGISAddress> myTableResults = findKgisResidentAddress.ToList();
 
             
             if (myTableResults.Count > 0)
                 {
  
-                foreach (Kgisaddress allKgisAddress in myTableResults) 
+                foreach (KGISAddress allKGISAddress in myTableResults) 
                     {
-                    if (allKgisAddress.Jurisdiction != 1)
+                    if (allKGISAddress.JURISDICTION != 1)
                         {
                         WRMLogger.LogBuilder.Append("OUTSIDE KNOXVILLE: ");
                         }
-                    if (allKgisAddress.AddressStatus != 2)
+                    if (allKGISAddress.ADDRESS_STATUS != 2)
                         {
                         WRMLogger.LogBuilder.Append("INVALID STATUS FOR: ");
                         }
-                    if (allKgisAddress.Jurisdiction == 1 && allKgisAddress.AddressStatus == 2)
+                    if (allKGISAddress.JURISDICTION == 1 && allKGISAddress.ADDRESS_STATUS == 2)
                         {
                         verified = true;
                         WRMLogger.LogBuilder.Append("CONFUSED STATUS FOR: ");

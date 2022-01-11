@@ -13,7 +13,8 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
     {
         public void Configure(EntityTypeBuilder<Address> entity)
         {
-            entity.Property(e => e.AddressId).HasColumnName("AddressID");
+
+            entity.Property(e => e.AddressID).HasColumnName("AddressID");
 
             entity.Property(e => e.AddressType)
                 .IsRequired()
@@ -30,29 +31,29 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
                 .HasMaxLength(100)
                 .IsUnicode(false);
 
-            entity.Property(e => e.GisaddressUseType)
+            entity.Property(e => e.GISAddressUseType)
                 .HasMaxLength(30)
                 .IsUnicode(false)
                 .HasColumnName("GISAddressUseType");
 
-            entity.Property(e => e.Gislatitude)
+            entity.Property(e => e.GISLatitude)
                 .HasColumnType("numeric(38, 8)")
                 .HasColumnName("GISLatitude");
 
-            entity.Property(e => e.Gislongitude)
+            entity.Property(e => e.GISLongitude)
                 .HasColumnType("numeric(38, 8)")
                 .HasColumnName("GISLongitude");
 
-            entity.Property(e => e.GisparcelId)
+            entity.Property(e => e.GISParcelID)
                 .HasMaxLength(11)
                 .IsUnicode(false)
                 .HasColumnName("GISParcelID");
 
-            entity.Property(e => e.GispointX)
+            entity.Property(e => e.GISPointX)
                 .HasColumnType("numeric(38, 8)")
                 .HasColumnName("GISPointX");
 
-            entity.Property(e => e.GispointY)
+            entity.Property(e => e.GISPointY)
                 .HasColumnType("numeric(38, 8)")
                 .HasColumnName("GISPointY");
 

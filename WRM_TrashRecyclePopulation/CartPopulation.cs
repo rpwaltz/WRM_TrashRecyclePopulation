@@ -16,14 +16,14 @@ namespace WRM_TrashRecyclePopulation
         public Dictionary<string, Cart> cartPopulationDictionary;
 
         public static string xlsxSNMasterlistPath = @"C:\Users\rwaltz\Documents\SolidWaste\SN_MASTERLIST_Current.xlsm";
-        static private IEnumerable<Kgisaddress> kgisCityResidentAddressList;
+        static private IEnumerable<KGISAddress> kgisCityResidentAddressList;
         private ExcelWorksheet worksheet;
         private int totalRowsWorksheet;
         private int firstWorksheetColumn;
         private int lastWorksheetColumn;
         private ServiceTrashDayImporter serviceTrashDayImporter;
 
-        static public IEnumerable<Kgisaddress> KgisCityResidentAddressList { get => kgisCityResidentAddressList; set => kgisCityResidentAddressList = value; }
+        static public IEnumerable<KGISAddress> KgisCityResidentAddressList { get => kgisCityResidentAddressList; set => kgisCityResidentAddressList = value; }
 
 
         public CartPopulation(WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle wrmTrashRecycleContext)
@@ -99,22 +99,22 @@ namespace WRM_TrashRecyclePopulation
                     if (!this.cartPopulationDictionary.ContainsKey(trashdictionaryKey))
                         {
                         //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                        Cart trashCartHistory = buildCart(row, address.AddressId, 8, 9, false, true);
+                        Cart trashCartHistory = buildCart(row, address.AddressID, 8, 9, false, true);
                         if (trashCartHistory != null)
                             {
                             saveAndDeleteCart(trashCartHistory);
                             }
-                        trashCartHistory = buildCart(row, address.AddressId, 10, 11, false, true);
+                        trashCartHistory = buildCart(row, address.AddressID, 10, 11, false, true);
                         if (trashCartHistory != null)
                             {
                             saveAndDeleteCart(trashCartHistory);
                             }
-                        trashCartHistory = buildCart(row, address.AddressId, 12, 13, false, true);
+                        trashCartHistory = buildCart(row, address.AddressID, 12, 13, false, true);
                         if (trashCartHistory != null)
                             {
                             saveAndDeleteCart(trashCartHistory);
                             }
-                        Cart trashcart = buildCart(row, address.AddressId, 6, 7, false, false);
+                        Cart trashcart = buildCart(row, address.AddressID, 6, 7, false, false);
                         if (trashcart != null)
                             {
 
@@ -130,18 +130,18 @@ namespace WRM_TrashRecyclePopulation
                     if (!this.cartPopulationDictionary.ContainsKey(recycledictionaryKey))
                         {
                         //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                        Cart recyclingCartHistory = buildCart(row, address.AddressId, 16, 17, true, true);
+                        Cart recyclingCartHistory = buildCart(row, address.AddressID, 16, 17, true, true);
                         if (recyclingCartHistory != null)
                             {
                             recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
                             }
 
-                        recyclingCartHistory = buildCart(row, address.AddressId, 18, 19, true, true);
+                        recyclingCartHistory = buildCart(row, address.AddressID, 18, 19, true, true);
                         if (recyclingCartHistory != null)
                             {
                             recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
                             }
-                        Cart recyclingCart = buildCart(row, address.AddressId, 14, 15, true, true);
+                        Cart recyclingCart = buildCart(row, address.AddressID, 14, 15, true, true);
                         if (recyclingCart != null)
                             {
                             recyclingCart = saveCart(recyclingCart);
@@ -259,7 +259,7 @@ namespace WRM_TrashRecyclePopulation
                 cart.IsRecyclingCart = false;
                 }
             
-            cart.AddressId = addressId;
+            cart.AddressID = addressId;
             cart.CreateDate = DateTime.Now;
             cart.CreateUser = "WRM_TrashRecyclePopulation";
             cart.UpdateDate = DateTime.Now;
@@ -301,7 +301,7 @@ namespace WRM_TrashRecyclePopulation
                 foreach (string serialNumberNew in serialNumberList)
                     {
                     Cart additionalCart = new Cart();
-                    additionalCart.AddressId = cart.AddressId;
+                    additionalCart.AddressID = cart.AddressID;
                     additionalCart.CartSerialNumber = serialNumberNew;
                     additionalCart.CartStatus = cart.CartStatus;
                     additionalCart.CreateDate = cart.CreateDate;
@@ -459,11 +459,11 @@ namespace WRM_TrashRecyclePopulation
                 }
 
             //KgisCityResidentAddressList
-            //  IEnumerable<Kgisaddress> foundKgisResidentAddress = kgisCityResidentAddressList.Where(req => req.StreetName.ToUpper().Equals(request.StreetName.ToUpper()));
-            List<Kgisaddress> foundKgisResidentAddress = WRM_TrashRecycleQueries.findKGISAddressList(address);
+            //  IEnumerable<KGISAddress> foundKgisResidentAddress = kgisCityResidentAddressList.Where(req => req.StreetName.ToUpper().Equals(request.StreetName.ToUpper()));
+            List<KGISAddress> foundKgisResidentAddress = WRM_TrashRecycleQueries.findKGISAddressList(address);
 
 
- //           IEnumerator<Kgisaddress> foundKgisResidentAddressEnumerator = foundKgisResidentAddress.GetEnumerator();
+ //           IEnumerator<KGISAddress> foundKgisResidentAddressEnumerator = foundKgisResidentAddress.GetEnumerator();
 
 
             int countFoundAddresses = foundKgisResidentAddress.Count();
@@ -552,9 +552,9 @@ namespace WRM_TrashRecyclePopulation
                 }
             return address;
             }
-        //  //  IEnumerable<Kgisaddress> foundKgisResidentAddress
+        //  //  IEnumerable<KGISAddress> foundKgisResidentAddress
 
-        private Address buildAddressWithUnitFromEnumerator(Address address, IEnumerable<Kgisaddress> foundKgisResidentAddress)
+        private Address buildAddressWithUnitFromEnumerator(Address address, IEnumerable<KGISAddress> foundKgisResidentAddress)
             {
 
 
@@ -563,18 +563,18 @@ namespace WRM_TrashRecyclePopulation
                 if (!String.IsNullOrEmpty(address.UnitNumber))
                     {
                     string UnitNumber = address.UnitNumber.ToUpper();
-                    // Need to make certain that Kgisaddress does have a Unit. Just because we find one residence has a unit does not mean all addresses at the street number have units.
+                    // Need to make certain that KGISAddress does have a Unit. Just because we find one residence has a unit does not mean all addresses at the street number have units.
                     // there might be a primary address that has two apartments and each have their own cart
-                    IEnumerable<Kgisaddress> foundKgisCityResidentAddressUnitEnumerable =
+                    IEnumerable<KGISAddress> foundKgisCityResidentAddressUnitEnumerable =
                         from req in foundKgisResidentAddress
-                        where (!(String.IsNullOrEmpty(req.Unit)) && req.Unit.Equals(UnitNumber))
+                        where (!(String.IsNullOrEmpty(req.UNIT)) && req.UNIT.Equals(UnitNumber))
                         select req;
 
 
                     if (foundKgisCityResidentAddressUnitEnumerable.Count() == 1)
                         {
 
-                        Kgisaddress kgisCityResidentAddressUnit = foundKgisCityResidentAddressUnitEnumerable.First();
+                        KGISAddress kgisCityResidentAddressUnit = foundKgisCityResidentAddressUnitEnumerable.First();
                         address = buildAddress(kgisCityResidentAddressUnit);
                         //                        WRMLogger.LogBuilder.AppendLine("FOUND IN KGIS [" + address.StreetNumber + "][" + address.StreetName + "][" + address.UnitNumber + "] ");
                         }
@@ -584,7 +584,7 @@ namespace WRM_TrashRecyclePopulation
 
 
                         /*
-                                    IEnumerable<Kgisaddress> foundKgisResidentAddressUnit =
+                                    IEnumerable<KGISAddress> foundKgisResidentAddressUnit =
                             from req in foundKgisResidentAddressEnumerator
                             where Decimal.ToInt32(req.AddressNum ?? 0) == address.StreetNumber && req.StreetName.Equals(address.StreetName)
                             select req;
@@ -621,10 +621,10 @@ namespace WRM_TrashRecyclePopulation
             // potentially multiple address, create one for each
 
             }
-        private Address buildAddressFromEnumerator(Address address, IEnumerable<Kgisaddress> foundKgisResidentAddress)
+        private Address buildAddressFromEnumerator(Address address, IEnumerable<KGISAddress> foundKgisResidentAddress)
             {
 
-            IEnumerator<Kgisaddress> foundKgisResidentAddressEnumerator = foundKgisResidentAddress.GetEnumerator();
+            IEnumerator<KGISAddress> foundKgisResidentAddressEnumerator = foundKgisResidentAddress.GetEnumerator();
 
             if (foundKgisResidentAddressEnumerator.Current == null)
                 {
@@ -632,29 +632,29 @@ namespace WRM_TrashRecyclePopulation
 
                 }
 
-            Kgisaddress kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
-            if (kgisCityResidentAddress == null) throw new Exception("Can not find Kgisaddress");
+            KGISAddress kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
+            if (kgisCityResidentAddress == null) throw new Exception("Can not find KGISAddress");
             address = buildAddress(kgisCityResidentAddress);
             return address;
 
 
             }
-        public Address buildAddress(Kgisaddress kgisCityResidentAddress)
+        public Address buildAddress(KGISAddress kgisCityResidentAddress)
             {
             Address address = new Address();
             address.AddressType = AddressPopulation.translateAddressTypeFromKGISAddressUse(kgisCityResidentAddress);
 
-            address.GisparcelId = kgisCityResidentAddress.Parcelid;
+            address.GISParcelID= kgisCityResidentAddress.PARCELID;
 
-            address.StreetName = IdentifierProvider.normalizeStreetName(kgisCityResidentAddress.StreetName);
-            address.StreetNumber = Convert.ToInt32(kgisCityResidentAddress.AddressNum);
-            address.ZipCode = kgisCityResidentAddress.ZipCode.ToString();
-            address.GisaddressUseType = kgisCityResidentAddress.AddressUseType;
+            address.StreetName = IdentifierProvider.normalizeStreetName(kgisCityResidentAddress.STREET_NAME);
+            address.StreetNumber = Convert.ToInt32(kgisCityResidentAddress.ADDRESS_NUM);
+            address.ZipCode = kgisCityResidentAddress.ZIP_CODE.ToString();
+            address.GISAddressUseType = kgisCityResidentAddress.ADDRESS_USE_TYPE;
 
-            address.Gislatitude = kgisCityResidentAddress.Latitude;
-            address.Gislongitude = kgisCityResidentAddress.Longitude;
-            address.GispointX = kgisCityResidentAddress.PointX;
-            address.GispointY = kgisCityResidentAddress.PointY;
+            address.GISLatitude = kgisCityResidentAddress.LATITUDE;
+            address.GISLongitude = kgisCityResidentAddress.LONGITUDE;
+            address.GISPointX = kgisCityResidentAddress.POINT_X;
+            address.GISPointY = kgisCityResidentAddress.POINT_Y;
 
             string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
             //            WRMLogger.LogBuilder.AppendLine(dictionaryKey + " has a type of " + address.AddressType);

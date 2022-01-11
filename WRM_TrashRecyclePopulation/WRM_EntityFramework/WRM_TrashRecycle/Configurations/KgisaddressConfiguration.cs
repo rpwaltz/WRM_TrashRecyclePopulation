@@ -9,93 +9,93 @@ using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
 
 namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Configurations
 {
-    public partial class KgisaddressConfiguration : IEntityTypeConfiguration<Kgisaddress>
+    public partial class KGISAddressConfiguration : IEntityTypeConfiguration<KGISAddress>
     {
-        public void Configure(EntityTypeBuilder<Kgisaddress> entity)
+        public void Configure(EntityTypeBuilder<KGISAddress> entity)
         {
             entity.HasNoKey();
 
             entity.ToTable("KGISAddress");
 
-            entity.Property(e => e.AddressNum)
+            entity.Property(e => e.ADDRESS_NUM)
                 .HasColumnType("numeric(38, 0)")
                 .HasColumnName("ADDRESS_NUM");
 
-            entity.Property(e => e.AddressStatus)
+            entity.Property(e => e.ADDRESS_STATUS)
                 .HasColumnType("numeric(38, 0)")
                 .HasColumnName("ADDRESS_STATUS");
 
-            entity.Property(e => e.AddressUseType)
+            entity.Property(e => e.ADDRESS_USE_TYPE)
                 .HasMaxLength(30)
                 .HasColumnName("ADDRESS_USE_TYPE");
 
-            entity.Property(e => e.DateOfficialChange)
+            entity.Property(e => e.DATE_OFFICIAL_CHANGE)
                 .HasColumnType("date")
                 .HasColumnName("DATE_OFFICIAL_CHANGE");
 
-            entity.Property(e => e.Jurisdiction)
+            entity.Property(e => e.JURISDICTION)
                 .HasColumnType("numeric(38, 0)")
                 .HasColumnName("JURISDICTION");
 
-            entity.Property(e => e.Latitude)
+            entity.Property(e => e.LATITUDE)
                 .HasColumnType("numeric(38, 8)")
                 .HasColumnName("LATITUDE");
 
-            entity.Property(e => e.Longitude)
+            entity.Property(e => e.LONGITUDE)
                 .HasColumnType("numeric(38, 8)")
                 .HasColumnName("LONGITUDE");
 
-            entity.Property(e => e.Objectid)
+            entity.Property(e => e.OBJECTID)
                 .HasColumnType("numeric(38, 0)")
                 .HasColumnName("OBJECTID");
 
-            entity.Property(e => e.Parcelid)
+            entity.Property(e => e.PARCELID)
                 .HasMaxLength(50)
                 .HasColumnName("PARCELID");
 
-            entity.Property(e => e.PointX)
+            entity.Property(e => e.POINT_X)
                 .HasColumnType("numeric(38, 8)")
                 .HasColumnName("POINT_X");
 
-            entity.Property(e => e.PointY)
+            entity.Property(e => e.POINT_Y)
                 .HasColumnType("numeric(38, 8)")
                 .HasColumnName("POINT_Y");
 
-            entity.Property(e => e.Prefix)
+            entity.Property(e => e.PREFIX)
                 .HasMaxLength(2)
                 .HasColumnName("PREFIX");
 
-            entity.Property(e => e.StateCode)
+            entity.Property(e => e.STATE_CODE)
                 .HasMaxLength(2)
                 .HasColumnName("STATE_CODE");
 
-            entity.Property(e => e.StreetBasename)
+            entity.Property(e => e.STREET_BASENAME)
                 .HasMaxLength(32)
                 .HasColumnName("STREET_BASENAME");
 
-            entity.Property(e => e.StreetName)
+            entity.Property(e => e.STREET_NAME)
                 .HasMaxLength(50)
                 .HasColumnName("STREET_NAME");
 
-            entity.Property(e => e.StreetType)
+            entity.Property(e => e.STREET_TYPE)
                 .HasMaxLength(4)
                 .HasColumnName("STREET_TYPE");
 
-            entity.Property(e => e.Unit)
+            entity.Property(e => e.UNIT)
                 .HasMaxLength(10)
                 .HasColumnName("UNIT");
 
-            entity.Property(e => e.UnitType)
+            entity.Property(e => e.UNIT_TYPE)
                 .HasMaxLength(30)
                 .HasColumnName("UNIT_TYPE");
 
-            entity.Property(e => e.ZipCode)
+            entity.Property(e => e.ZIP_CODE)
                 .HasColumnType("numeric(38, 0)")
                 .HasColumnName("ZIP_CODE");
 
             OnConfigurePartial(entity);
         }
 
-        partial void OnConfigurePartial(EntityTypeBuilder<Kgisaddress> entity);
+        partial void OnConfigurePartial(EntityTypeBuilder<KGISAddress> entity);
     }
 }

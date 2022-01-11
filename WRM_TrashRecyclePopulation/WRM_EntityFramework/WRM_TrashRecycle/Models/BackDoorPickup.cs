@@ -2,26 +2,49 @@
 #nullable disable
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
 {
     public partial class BackDoorPickup
     {
-        public int BackDoorPickupId { get; set; }
-        public int ResidentId { get; set; }
-        public int? AddressId { get; set; }
+        [Key]
+        public int BackDoorPickupID { get; set; }
+        public int ResidentID { get; set; }
+        public int? AddressID { get; set; }
+        [StringLength(50)]
+        [Unicode(false)]
         public string BackdoorType { get; set; }
+        [StringLength(50)]
+        [Unicode(false)]
         public string BackdoorStatus { get; set; }
+        [Column(TypeName = "datetime")]
         public DateTime? BackdoorStatusDate { get; set; }
+        [Column(TypeName = "datetime")]
         public DateTime? BackdoorApprovalDate { get; set; }
+        [Column(TypeName = "datetime")]
         public DateTime? BackdoorWithdrawalDate { get; set; }
+        [StringLength(512)]
+        [Unicode(false)]
         public string Note { get; set; }
+        [StringLength(100)]
+        [Unicode(false)]
         public string CreateUser { get; set; }
+        [Column(TypeName = "datetime")]
         public DateTime? CreateDate { get; set; }
+        [StringLength(100)]
+        [Unicode(false)]
         public string UpdateUser { get; set; }
+        [Column(TypeName = "datetime")]
         public DateTime? UpdateDate { get; set; }
 
+        [ForeignKey(nameof(AddressID))]
+        [InverseProperty("BackDoorPickup")]
         public virtual Address Address { get; set; }
+        [ForeignKey(nameof(ResidentID))]
+        [InverseProperty("BackDoorPickup")]
         public virtual Resident Resident { get; set; }
     }
 }
