@@ -36,16 +36,17 @@ namespace WRM_TrashRecyclePopulation
 {
     class WRM_TrashRecycleQueries
     {
+        /*
         static private List<RecyclingRequest> solidWasteRecyclingRequestList = null;
         static private List<BackdoorServiceRequest> solidWasteBackdoorRequestList = null;
 
         static private IEnumerable<BackdoorServiceRequest> orderedSolidWasteBackdoorRequestList = null;
         static private IEnumerable<RecyclingRequest> orderedRecyclingRequestList = null;
 
-        static private IEnumerable<KGISAddress> kgisCityResidentAddressList = KGISCityResidentCache.getKGISCityResidentCache();
+        static private IEnumerable<KGISAddress> kgisCityResidentAddressList = KGISAddressCache.getKGISAddressCache();
         public static IEnumerable<KGISAddress> retrieveKgisCityResidentAddressList()
             {
-            return KGISCityResidentCache.getKGISCityResidentCache();
+            return KGISAddressCache.getKGISAddressCache();
             }
 
         public static IEnumerable<BackdoorServiceRequest> retrieveBackdoorRequestList()
@@ -159,5 +160,6 @@ namespace WRM_TrashRecyclePopulation
                 }
             return verified;
             }
+                */
         }
-}
+    }

@@ -11,205 +11,184 @@ using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
 
 namespace WRM_TrashRecyclePopulation
     {
-
+    
     class BackdoorServiceResidentAddressPopulation : ResidentAddressPopulation
         {
 
         private Dictionary<string, BackDoorPickup> backDoorPickupDictionary = new Dictionary<string, BackDoorPickup>();
 
         public Dictionary<string, BackDoorPickup> BackDoorPickupDictionary { get => backDoorPickupDictionary; set => backDoorPickupDictionary = value; }
-
-
-        public bool populateBackdoorServiceAddressCustomer()
+            public bool populateBackDoorPickup()
             {
             try
                 {
-                String logLine = "populateBackdoorServiceAddressCustomer";
-                int maxToProcess = 0;
+                Program.logLine = "Begin BackDoorPickup Requests";
+                WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                WRMLogger.Logger.log();
 
-                IEnumerable<BackdoorServiceRequest> orderedSolidWasteBackdoorRequestList = WRM_TrashRecycleQueries.retrieveBackdoorRequestList();
+                int numberRequestsSaved = 0;
+                IEnumerable<BackdoorServiceRequest> orderedSolidWasteBackdorrRequestList = WRM_EntityFrameworkContextCache.SolidWasteContext.BackdoorServiceRequest.OrderBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.StreetName).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.StreetNumber).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.UnitNumber).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.BackdoorId).ToList();
 
-                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdoorRequestList)
+                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdorrRequestList)
                     {
-                    if (maxToProcess % 100 == 0)
+                    if (numberRequestsSaved % 100 == 0)
                         {
- //                       WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
- //                       WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                        Program.logLine = "Processed Backdoor Requests: " + maxToProcess;
+                        Program.logLine = "Processed BackDoorPickup Requests: " + numberRequestsSaved;
                         WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                         WRMLogger.Logger.log();
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         }
-                    ++maxToProcess;
-                    if (backdoorRequest == null)
-                        {
-                        throw new Exception("backdoor request is null");
-                        }
-                    logLine = "foreach Backdoor Request";
 
-                    populateResidentAddressFromRequest(backdoorRequest);
+                    try
+                        {
+                        buildAndSaveBackDoorPickupEntitiesFromRequest(backdoorRequest);
+                        ++numberRequestsSaved;
+                        }
+                    catch (Exception ex) when (ex is WRMWithdrawnStatusException || ex is WRMNotSupportedException || ex is WRMNullValueException)
+                        {
+                        WRMLogger.LogBuilder.AppendLine(ex.Message);
+                        }
 
                     }
+
+                Program.logLine = "Finished BackDoorPickup Requests " + numberRequestsSaved;
+                WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 WRMLogger.Logger.log();
+
                 return true;
                 }
             catch (Exception ex)
                 {
-                WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}",
-                    ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
+                WRMLogger.LogBuilder.AppendLine(ex.Message);
                 WRMLogger.LogBuilder.AppendLine(ex.ToString());
-                WRMLogger.LogBuilder.AppendLine( ex.StackTrace);
-                WRMLogger.Logger.log();
+                Exception inner = ex.InnerException;
+                if (inner != null)
+                    {
+                    WRMLogger.LogBuilder.AppendLine(inner.Message);
+                    WRMLogger.LogBuilder.AppendLine(inner.ToString());
+                    }
                 }
             return false;
             }
-        override public void buildAndSaveTrashRecycleEntitiesFromRequest(dynamic backdoorRequest, IEnumerator<KGISAddress> foundKgisResidentAddressEnumerator, int numberOfUnits)
+
+        
+        public void buildAndSaveBackDoorPickupEntitiesFromRequest(BackdoorServiceRequest backdoorRequest)
             {
-
-            if (foundKgisResidentAddressEnumerator.Current == null)
+            string status = backdoorRequest.Status.Trim();
+            status = translateBackdoorStatus(status);
+            Address address = buildAndAddResidentAddressFromRequest(backdoorRequest);
+            Resident resident = addOrUpdateResidentFromRequestToWRM_TrashRecycle(backdoorRequest);
+            
+            string backdoorRequestKey = address.AddressID + ":" + resident.ResidentID;
+            string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
+            BackDoorPickup foundBackDoorPickup = new BackDoorPickup();
+            if (BackDoorPickupDictionary.TryGetValue(backdoorRequestKey, out foundBackDoorPickup))
                 {
-                foundKgisResidentAddressEnumerator.MoveNext();
-
+                if ((backdoorRequest.LastUpdatedDate ?? Program.posixEpoche) > (foundBackDoorPickup.UpdateDate ?? Program.posixEpoche))
+                    {
+                    //backdoor request is more recent than address table, update common address fields
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                    buildRequestBackdoorService(backdoorRequest, ref foundBackDoorPickup);
+                    backDoorPickupDictionary[backdoorRequestKey] = foundBackDoorPickup;
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(backDoorPickupDictionary[backdoorRequestKey]);
+                    AddressPopulation.AddressDictionary[dictionaryKey].CreateDate = backdoorRequest.CreationDate;
+                    AddressPopulation.AddressDictionary[dictionaryKey].CreateUser = backdoorRequest.CreatedBy;
+                    AddressPopulation.AddressDictionary[dictionaryKey].UpdateDate = backdoorRequest.LastUpdatedDate;
+                    AddressPopulation.AddressDictionary[dictionaryKey].UpdateUser = backdoorRequest.LastUpdatedBy;
+                    }
+                if (((backdoorRequest.LastUpdatedDate ?? Program.posixEpoche) > address.UpdateDate) &&
+                    !string.IsNullOrEmpty(backdoorRequest.WantsRecyclingCart) &&
+                    (backdoorRequest.WantsRecyclingCart.ToUpper().Equals("YES")))
+                    {
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingPickup = true;
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingComment = "Modified by ETL " + AddressPopulation.AddressDictionary[dictionaryKey].RecyclingComment;
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatusDate = DateTime.Now;
+                    }
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(AddressPopulation.AddressDictionary[dictionaryKey]);
                 }
-
-            KGISAddress kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
-
-            Address address = builBackdoorAddress(backdoorRequest, kgisCityResidentAddress);
- 
-
-
-            Resident resident = buildRequestResident(backdoorRequest);
-
-
-
-            BackDoorPickup backDoorPickup = buildRequestBackdoorService(backdoorRequest);
-
-            saveBackdoorPickup(backDoorPickup);
+            else
+                {
+                BackDoorPickup backdoorPickup = new BackDoorPickup();
+                buildRequestBackdoorService(backdoorRequest, ref backdoorPickup);
+                backdoorPickup.AddressID = address.AddressID;
+                backdoorPickup.ResidentID = resident.ResidentID;
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(backdoorPickup);
+                if (((backdoorRequest.LastUpdatedDate ?? Program.posixEpoche) > address.UpdateDate) &&
+                        !string.IsNullOrEmpty(backdoorRequest.WantsRecyclingCart) &&
+                        (backdoorRequest.WantsRecyclingCart.ToUpper().Equals("YES")))
+                    {
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingPickup = true;
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingComment = "Modified by ETL " + AddressPopulation.AddressDictionary[dictionaryKey].RecyclingComment;
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatusDate = DateTime.Now;
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(AddressPopulation.AddressDictionary[dictionaryKey]);
+                    }
+                backDoorPickupDictionary.Add(backdoorRequestKey, backdoorPickup);
+                }
 
             }
 
 
-        public Address builBackdoorAddress(dynamic backdoorRequest, KGISAddress kgisCityResidentAddress)
+
+
+        public BackDoorPickup buildRequestBackdoorService(BackdoorServiceRequest backdoorServiceRequest, ref BackDoorPickup backdoorPickup)
             {
-            Address address = buildRequestAddress(backdoorRequest, kgisCityResidentAddress);
+            
+            backdoorPickup.BackdoorStatus = translateBackdoorStatus(backdoorServiceRequest.Status);
+            backdoorPickup.BackdoorStatusDate = backdoorServiceRequest.StatusDate;
 
-            address.RecyclingPickup = backdoorRequest.Status.Equals("APPROVED");
-            String recycler = backdoorRequest.Recycler;
-
-            if (String.IsNullOrWhiteSpace(recycler))
+            if (!string.IsNullOrEmpty(backdoorServiceRequest.MedicalNeedForBackdoorService) &&
+                (backdoorServiceRequest.MedicalNeedForBackdoorService.ToUpper().Equals("YES")))
                 {
-                recycler = "NO";
+                backdoorPickup.BackdoorType = "MEDICAL NEED";
+
                 }
-            switch (recycler.ToUpper())
+            else if (!string.IsNullOrEmpty(backdoorServiceRequest.Over75NoOneToTransportCans) &&
+                (backdoorServiceRequest.Over75NoOneToTransportCans.ToUpper().Equals("YES")))
                 {
-                case "YES":
-                    address.RecyclingPickup = true;
-                    address.RecyclingStatusDate = backdoorRequest.StatusDate;
-                    address.RecyclingRequestedDate = backdoorRequest.CreationDate;
-                    break;
-
-                case "NO":
-                    address.RecyclingPickup = false;
-                    break;
-
-                default:
-                    throw new Exception("Recycling status undefined");
+                backdoorPickup.BackdoorType = "OVER 75";
+                }
+            else if (!string.IsNullOrEmpty(backdoorServiceRequest.WantsToEnrollInFeeBasedService) &&
+                (backdoorServiceRequest.WantsToEnrollInFeeBasedService.ToUpper().Equals("YES")))
+                {
+                backdoorPickup.BackdoorType = "PAY FOR SERVICE";
                 }
 
+            backdoorPickup.CreateDate = backdoorServiceRequest.CreationDate;
+            backdoorPickup.CreateUser = backdoorServiceRequest.CreatedBy;
+            backdoorPickup.UpdateDate = backdoorServiceRequest.LastUpdatedDate;
+            backdoorPickup.UpdateUser = backdoorServiceRequest.LastUpdatedBy;
 
-            address.NumberUnits = "1";
-            return address;
-            }
-
-
-
-        public BackDoorPickup buildRequestBackdoorService(dynamic backdoorServiceRequest)
-            {
-            BackDoorPickup backdoorPickup = new BackDoorPickup();
-
-
-            switch (backdoorServiceRequest.Status)
-                {
-                case "PAY FOR SERVICE":
-                    backdoorPickup.BackdoorType = "PAY FOR SERVICE";
-                    backdoorPickup.BackdoorStatus = "APPROVED";
-                    break;
-                case "MEDICAL NEED/OVER 75":
-                    String medicalNeed = backdoorServiceRequest.MedicalNeedForBackdoorService;
-
-                    if (String.IsNullOrWhiteSpace(medicalNeed))
-                        {
-                        medicalNeed = "NO";
-                        }
-                    if (medicalNeed.ToUpper().Equals("YES"))
-                        {
-                        backdoorPickup.BackdoorType = "MEDICAL NEED";
-                        }
-
-                    String over75 = backdoorServiceRequest.MedicalNeedForBackdoorService;
-
-                    if (String.IsNullOrWhiteSpace(over75))
-                        {
-                        over75 = "NO";
-                        }
-                    if (over75.ToUpper().Equals("YES"))
-                        {
-                        backdoorPickup.BackdoorType = "OVER 75";
-                        }
-
-                    backdoorPickup.BackdoorStatus = "APPROVED";
-                    break;
-                case "REQUESTED":
-                    backdoorPickup.BackdoorStatus = "REQUESTED";
-                    break;
-
-                case "WITHDRAWN":
-                    backdoorPickup.BackdoorStatus = "WITHDRAWN";
-                    break;
-                default:
-                    throw new Exception("Backdoor status undefined " + backdoorServiceRequest.Status);
-                }
             backdoorPickup.BackdoorStatusDate = backdoorServiceRequest.StatusDate;
             backdoorPickup.Note = backdoorServiceRequest.Comments;
             return backdoorPickup;
 
             }
-        public BackDoorPickup saveBackdoorPickup(BackDoorPickup backdoorPickup)
+        private string translateBackdoorStatus(string status)
             {
-            BackDoorPickup foundBackdoorPickup;
-            string backdoorDictionaryKey = backdoorPickup.AddressID.ToString();
-//            WRMLogger.LogBuilder.AppendLine("backdoorDictionaryKey " + backdoorDictionaryKey);
-
-            if (backDoorPickupDictionary.TryGetValue(backdoorDictionaryKey, out foundBackdoorPickup))
+            switch (status)
                 {
-                if ((backdoorPickup.UpdateDate ?? Program.posixEpoche) > (foundBackdoorPickup.UpdateDate ?? Program.posixEpoche))
-                    {
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Remove(foundBackdoorPickup);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(backdoorPickup);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                    backdoorPickup = foundBackdoorPickup;
-                    }
-                else
-                    {
-                    
-                    string logMessage = string.Format("Unable to determine if Backdoor Pickup changed from Name {0} {1} Address {2}  {3} With Status {4} created {5} updated {6} TO Name {7} {8} Address {9}  {10} With Status {11} created {12} updated {13}\n",
-                        backdoorPickup.Resident.FirstName, backdoorPickup.Resident.LastName, backdoorPickup.Address.StreetNumber, backdoorPickup.Address.StreetName, backdoorPickup.Address.UnitNumber, backdoorPickup.BackdoorStatus, backdoorPickup.CreateDate.ToString(), backdoorPickup.UpdateDate.ToString(),
-                        foundBackdoorPickup.Resident.FirstName, foundBackdoorPickup.Resident.LastName, foundBackdoorPickup.Address.StreetNumber, foundBackdoorPickup.Address.StreetName, foundBackdoorPickup.Address.UnitNumber, foundBackdoorPickup.BackdoorStatus, foundBackdoorPickup.CreateDate.ToString(), foundBackdoorPickup.UpdateDate.ToString());
-                    WRMLogger.LogBuilder.Append(logMessage);
-                    }
+                case "PAY FOR SERVICE":
+                    status = "APPROVED";
+                    break;
+                case "MEDICAL NEED/OVER 75":
+                    status = "APPROVED";
+                    break;
+                case "REQUESTED":
+                    status = "REQUESTED";
+                    break;
+                case "WITHDRAWN":
+                    status = "WITHDRAWN";
+                    break;
+                default:
+                    throw new Exception(" Invalid Recycling status :" + status);
                 }
-            else
-                {
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(backdoorPickup);
-                // logBuilder.AppendLine("Add " + request.StreetNumber + "  " + request.StreetName);
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                backDoorPickupDictionary.Add(backdoorDictionaryKey, backdoorPickup);
-                }
-            return backdoorPickup;
+            return status;
             }
 
+
+
         }
+
     }

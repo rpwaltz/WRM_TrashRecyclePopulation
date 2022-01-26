@@ -11,6 +11,7 @@ using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
 
 namespace WRM_TrashRecyclePopulation
     {
+
     class RecyclingResidentAddressPopulation : ResidentAddressPopulation
         {
 
@@ -22,155 +23,146 @@ namespace WRM_TrashRecyclePopulation
                 WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 WRMLogger.Logger.log();
 
-                int maxToProcess = 0;
-                IEnumerable<KGISAddress> kgisCityResidentAddressList = WRM_TrashRecycleQueries.retrieveKgisCityResidentAddressList();
+                int numberRequestsSaved = 0;
+                IEnumerable<RecyclingRequest> orderedSolidWasteRecyclingRequestList = WRM_EntityFrameworkContextCache.SolidWasteContext.RecyclingRequest.OrderBy(solidWasteRecyclingRequestList => solidWasteRecyclingRequestList.StreetName).ThenBy(solidWasteRecyclingRequestList => solidWasteRecyclingRequestList.StreetNumber).ThenBy(solidWasteRecyclingRequestList => solidWasteRecyclingRequestList.UnitNumber).ThenBy(solidWasteRecyclingRequestList => solidWasteRecyclingRequestList.Id).ToList();
 
 
-                IEnumerable<RecyclingRequest> orderedSolidWasteRecyclingRequestList = WRM_TrashRecycleQueries.retrieveRecyclingRequestList();
+
 
                 foreach (RecyclingRequest recyclingRequest in orderedSolidWasteRecyclingRequestList)
                     {
-                    if (maxToProcess % 100 == 0)
+                    if (numberRequestsSaved % 100 == 0)
                         {
-                        Program.logLine = "Processed Recycling Requests: " + maxToProcess;
+                        Program.logLine = "Processed Recycling Requests: " + numberRequestsSaved;
                         WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                         WRMLogger.Logger.log();
-//                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-//                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         }
-                    ++maxToProcess;
 
-                    populateResidentAddressFromRequest(recyclingRequest);
+                    try
+                        {
+                        populateResidentAddressFromRecycleRequest(recyclingRequest);
+                        ++numberRequestsSaved;
+                        }
+                    catch (Exception ex) when (ex is WRMWithdrawnStatusException || ex is WRMNotSupportedException || ex is WRMNullValueException)
+                        {
+                        WRMLogger.LogBuilder.AppendLine(ex.Message);
+                        }
+
 
                     }
 
-                Program.logLine = "Finished Recycling Requests";
+                Program.logLine = "Finished Recycling Requests " + numberRequestsSaved;
                 WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 WRMLogger.Logger.log();
+                foreach (Resident resident in WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Resident.ToList())
+                    {
+                    string dictionaryKey = ReverseAddressIdentiferDictionary[resident.AddressID ?? 0];
+                    ResidentIdentiferDictionary[dictionaryKey] = resident.ResidentID;
+                    }
+
                 return true;
                 }
             catch (Exception ex)
                 {
-                WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}", ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
+                WRMLogger.LogBuilder.AppendLine(ex.Message);
                 WRMLogger.LogBuilder.AppendLine(ex.ToString());
-                WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
-                WRMLogger.Logger.log();
+                Exception inner = ex.InnerException;
+                if (inner != null)
+                    {
+                    WRMLogger.LogBuilder.AppendLine(inner.Message);
+                    WRMLogger.LogBuilder.AppendLine(inner.ToString());
+                    }
                 }
             return false;
             }
 
-        override public void buildAndSaveTrashRecycleEntitiesFromRequest(dynamic recyclingRequest, IEnumerator<KGISAddress> foundKgisResidentAddressEnumerator, int numberOfUnits)
+        public void populateResidentAddressFromRecycleRequest(RecyclingRequest request)
             {
-
-            if (foundKgisResidentAddressEnumerator.Current == null)
-                {
-                foundKgisResidentAddressEnumerator.MoveNext();
-
-                }
-
-            KGISAddress kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
-            string streetName = IdentifierProvider.normalizeStreetName(kgisCityResidentAddress.STREET_NAME);
-            int streetNumber = Convert.ToInt32(kgisCityResidentAddress.ADDRESS_NUM);
-            string zipCode = kgisCityResidentAddress.ZIP_CODE.ToString();
-            string unitNumber = null;
-            if (recyclingRequest.UnitNumber != null)
-                unitNumber = recyclingRequest.UnitNumber;
+            string status = request.Status.Trim();
+            status = translateAddressStatus(status);
+            Address address = buildAndAddResidentAddressFromRequest(request);
+            Resident resident = buildResidentFromRequest(request);
+            resident.AddressID = address.AddressID;
+            string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
             Address foundAddress = new Address();
-            bool updateAddress = false;
-            Address address = new Address();
-            ;
-            string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(streetName, streetNumber, unitNumber, zipCode);
-
-            if (AddressDictionary.TryGetValue(dictionaryKey, out foundAddress))
-                if (((foundAddress.UpdateDate ?? Program.posixEpoche) > (recyclingRequest.LastUpdatedDate ?? Program.posixEpoche)))
-                    //update address status with recycling request
-                    updateAddress = true;
-                else
-                    {
-                    address = buildRecyclingAddress(recyclingRequest, kgisCityResidentAddress);
-                    }
-
-
-            Resident resident = buildRequestResident(recyclingRequest);
-            if (updateAddress)
+            if (AddressPopulation.AddressDictionary.TryGetValue(dictionaryKey, out foundAddress))
                 {
-                string status = (string)recyclingRequest.Status.Trim();
-                foundAddress.RecyclingStatus = translateAddressStatus(status);
-
-                if (foundAddress.Resident == null)
+                // compare dates, if request date is later than recycling dates, update
+                if ((request.LastUpdatedDate ?? Program.posixEpoche) > (address.UpdateDate ?? Program.posixEpoche))
                     {
-                    address.RecyclingStatus = translateAddressStatus(status);
-                    if (resident != null)
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                    AddressPopulation.AddressDictionary[dictionaryKey].CreateDate = request.CreationDate;
+                    AddressPopulation.AddressDictionary[dictionaryKey].CreateUser = request.CreatedBy;
+                    AddressPopulation.AddressDictionary[dictionaryKey].UpdateDate = request.LastUpdatedDate;
+                    AddressPopulation.AddressDictionary[dictionaryKey].UpdateUser = request.LastUpdatedBy;
+
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatus = status;
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingPickup = status.Equals("APPROVED");
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatusDate = request.StatusDate;
+
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(AddressPopulation.AddressDictionary[dictionaryKey]);
+                    // update resident
+                    Resident foundResident = new Resident();
+                    if (ResidentDictionary.TryGetValue(dictionaryKey, out foundResident))
                         {
-                        resident.AddressID = foundAddress.AddressID;
-                        foundAddress.Resident.Add(resident);
-                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(address);
-                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                        ResidentDictionary[dictionaryKey].FirstName = resident.FirstName;
+                        ResidentDictionary[dictionaryKey].LastName = resident.LastName;
+                        ResidentDictionary[dictionaryKey].Email = resident.Email;
+                        if (!String.IsNullOrWhiteSpace(resident.Phone))
+                            {
+                            string phoneNumber = reducePhoneNumber.Replace(request.PhoneNumber, string.Empty).Trim();
+                            resident.Phone = phoneNumber;
+                            }
+                        if (String.IsNullOrEmpty(request.SendEmailNewsletter) || request.SendEmailNewsletter.Equals("N"))
+                            {
+                            ResidentDictionary[dictionaryKey].SendEmailNewsletter = false;
+                            }
+                        else
+                            {
+                            ResidentDictionary[dictionaryKey].SendEmailNewsletter = true;
+                            }
+                        ResidentDictionary[dictionaryKey].CreateDate = request.CreationDate;
+                        ResidentDictionary[dictionaryKey].CreateUser = request.CreatedBy;
+                        ResidentDictionary[dictionaryKey].UpdateDate = request.LastUpdatedDate;
+                        ResidentDictionary[dictionaryKey].UpdateUser = request.LastUpdatedBy;
+
+                        ResidentDictionary[dictionaryKey].AddressID = address.AddressID;
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(ResidentDictionary[dictionaryKey]);
                         }
                     else
                         {
-                        WRMLogger.LogBuilder.AppendLine("Unable to determine Resident");
-                        WRMLogger.Logger.log();
+                        // add a new resident to an existing address
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(resident);
+                        ResidentDictionary[dictionaryKey] = resident;
                         }
                     }
                 else
                     {
-                    Resident foundResident = foundAddress.Resident.First();
-                    foundResident.FirstName = resident.FirstName;
-                    foundResident.LastName = resident.LastName;
-                    foundResident.Email = resident.Email;
-                    foundResident.Note = resident.Note;
-                    foundResident.Phone = resident.Phone;
-                    foundResident.UpdateDate = resident.UpdateDate;
-                    foundResident.CreateDate = resident.CreateDate;
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(foundResident);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                    if (String.IsNullOrEmpty(request.SendEmailNewsletter) || request.SendEmailNewsletter.Equals("N"))
+                        {
+                        resident.SendEmailNewsletter = false;
+                        }
+                    else
+                        {
+                        resident.SendEmailNewsletter = true;
+                        }
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatus = status;
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingPickup = status.Equals("APPROVED");
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatusDate = request.StatusDate;
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(AddressPopulation.AddressDictionary[dictionaryKey]);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(resident);
+                    ResidentDictionary[dictionaryKey] = resident;
                     }
                 }
             else
                 {
-                address.NumberUnits = numberOfUnits.ToString();
-
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                if (resident != null)
-                    {
-                    resident.AddressID = address.AddressID;
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(resident);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                    }
-                else
-                    {
-                    WRMLogger.LogBuilder.AppendLine("Unable to determine Resident");
-                    WRMLogger.Logger.log();
-                    }
-                //               resident.AddressID = address.AddressID;
-                //               WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(resident);
-                //               WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                //               WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                throw new WRMNullValueException("Address not found in Dictionary  [" + dictionaryKey + "]");
                 }
-            if (!updateAddress)
-                {
-                AddressDictionary.Add(dictionaryKey, address);
-                }
-            }
+            
 
-
-        private Address buildRecyclingAddress(dynamic recyclingRequest, KGISAddress kgisCityResidentAddress)
-            {
-            Address address = buildRequestAddress(recyclingRequest, kgisCityResidentAddress);
-
-            address.RecyclingPickup = recyclingRequest.Status.Equals("APPROVED");
-            string status = (string)recyclingRequest.Status.Trim();
-            address.RecyclingStatus = translateAddressStatus(status);
-
-            address.RecyclingStatusDate = recyclingRequest.StatusDate;
-            address.RecyclingRequestedDate = recyclingRequest.CreationDate;
-            return address;
             }
         private string translateAddressStatus(string status)
             {
@@ -183,17 +175,18 @@ namespace WRM_TrashRecyclePopulation
                     status = "REQUESTED";
                     break;
                 case "DISAPPROVED":
-                    status = "REJECTED";
+                    status = "NOT APPROVED";
                     break;
+                case "WITHDRAWN":
+                    status = "WITHDRAWN";
+                    break;
+             //       throw new WRMWithdrawnStatusException("Ignore Recycling request with status of WITHDRAWN");
                 default:
                     throw new Exception(" Invalid Recycling status :" + status);
                 }
             return status;
             }
 
-
-
         }
-
 
     }

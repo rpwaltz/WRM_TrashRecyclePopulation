@@ -39,66 +39,80 @@ namespace WRM_TrashRecyclePopulation
             }
         public static string provideIdentifierFromAddress (string streetName, int? streetNumber, string unitNumber, string zipCode)
         {
-            string target = String.Format("{0}-{1}-{2}-{3}", streetName, streetNumber.ToString(), unitNumber, zipCode);
+            string target = String.Format("{0}-{1}-{2}-{3}", normalizeStreetName(streetName).Replace(" ","-"), streetNumber, normalizeUnitNumber(unitNumber), normalizeZipCode(zipCode));
             return target;
         }
-
         public static string normalizeStreetName(string target)
-        {
+            {
+            if (string.IsNullOrEmpty(target))
+                {
+                throw new WRMNullValueException("Street Name is Null");
+                }
             target = target.Trim();
             target = target.ToUpper();
             target = normalizeWhiteSpaceInString(target);
-            Regex normalizeDirections = new Regex(@"(?:SOUTH|NORTH|WEST|EAST)\s+");
-            MatchCollection directionMatches = normalizeDirections.Matches(target);
-            if (directionMatches.Count > 0)
-                {
-
-                foreach (Match match in directionMatches) {
-                    string fromString = match.Value;
-                    string toString = match.Value.Substring(0, 1) + " ";
-                    target = target.Replace(fromString, toString);
-                    }
-                }
-            Regex normalizeOrdinalValues = new Regex(@"([S|N|E|W])?\s?(\d{1,2}\s?(?:ST|ND|RD|TH))\s+(.+)");
-
-            if (normalizeOrdinalValues.IsMatch(target))
-                {
-                MatchCollection normalizeOrdinalValueMatches = normalizeOrdinalValues.Matches(target);
-                Match normalizeOrdinalValueMatch = normalizeOrdinalValueMatches[0];
-                GroupCollection groupOrdinalValueMatch = normalizeOrdinalValueMatch.Groups;
-                string prefix = groupOrdinalValueMatch[1].ToString();
-                string numericOrdinal = groupOrdinalValueMatch[2].ToString();
-                string suffixAddress = groupOrdinalValueMatch[3].ToString();
-
-                if (streetNumberConversionTable.ContainsKey(numericOrdinal))
-                    {
-                    string[] ordinalValue = streetNumberConversionTable[numericOrdinal];
-                    if (! String.IsNullOrEmpty(prefix))
-                        {
-                        prefix = prefix + " ";
-                        }
-                    if (ordinalValue.Length == 2)
-                            {
-                            target = prefix   + ordinalValue[0]  + " " + ordinalValue[1];
-                            } 
-                        else
-                            {
-                        
-                            target =  prefix + " " + ordinalValue[0];
-                            }
-                    }
-                else
-                    {
-                    throw new Exception("Cannot get " + numericOrdinal + " From streetNumberConversionTable");
-                    }
-                }
-
-
-
             return target;
-        }
-        public static int normalizeStreetNumber(string streetNumberString)
+            }
+            /*
+            public static string normalizeStreetName(string target)
+            {
+                target = target.Trim();
+                target = target.ToUpper();
+                target = normalizeWhiteSpaceInString(target);
+                Regex normalizeDirections = new Regex(@"(?:SOUTH|NORTH|WEST|EAST)\s+");
+                MatchCollection directionMatches = normalizeDirections.Matches(target);
+                if (directionMatches.Count > 0)
+                    {
+
+                    foreach (Match match in directionMatches) {
+                        string fromString = match.Value;
+                        string toString = match.Value.Substring(0, 1) + " ";
+                        target = target.Replace(fromString, toString);
+                        }
+                    }
+                Regex normalizeOrdinalValues = new Regex(@"([S|N|E|W])?\s?(\d{1,2}\s?(?:ST|ND|RD|TH))\s+(.+)");
+
+                if (normalizeOrdinalValues.IsMatch(target))
+                    {
+                    MatchCollection normalizeOrdinalValueMatches = normalizeOrdinalValues.Matches(target);
+                    Match normalizeOrdinalValueMatch = normalizeOrdinalValueMatches[0];
+                    GroupCollection groupOrdinalValueMatch = normalizeOrdinalValueMatch.Groups;
+                    string prefix = groupOrdinalValueMatch[1].ToString();
+                    string numericOrdinal = groupOrdinalValueMatch[2].ToString();
+                    string suffixAddress = groupOrdinalValueMatch[3].ToString();
+
+                    if (streetNumberConversionTable.ContainsKey(numericOrdinal))
+                        {
+                        string[] ordinalValue = streetNumberConversionTable[numericOrdinal];
+                        if (! String.IsNullOrEmpty(prefix))
+                            {
+                            prefix = prefix + " ";
+                            }
+                        if (ordinalValue.Length == 2)
+                                {
+                                target = prefix   + ordinalValue[0]  + " " + ordinalValue[1];
+                                } 
+                            else
+                                {
+
+                                target =  prefix + " " + ordinalValue[0];
+                                }
+                        }
+                    else
+                        {
+                        throw new WRMNotSupportedException("Identity Provider: Cannot get " + numericOrdinal + " From streetNumberConversionTable");
+                        }
+                    }
+
+
+
+                return target;
+            }
+            */
+            public static int normalizeStreetNumber(string streetNumberString)
         {
+            if (String.IsNullOrEmpty(streetNumberString))
+                return 0;
             int streetNumber;
             if (int.TryParse(streetNumberString, out streetNumber) )
                 {
@@ -113,6 +127,10 @@ namespace WRM_TrashRecyclePopulation
             }
         public static string normalizeUnitNumber(string target)
         {
+            if (String.IsNullOrEmpty(target))
+                {
+                return "";
+                }
             target = target.Trim();
             target = target.ToUpper();
             target = normalizeWhiteSpaceInString(target);
@@ -120,6 +138,10 @@ namespace WRM_TrashRecyclePopulation
         }
         public static string normalizeZipCode(string target)
         {
+            if (string.IsNullOrEmpty(target))
+                {
+                throw new WRMNullValueException("Zip Code is Null");
+                }
             target = target.Trim();
             target = target.ToUpper();
             target = normalizeWhiteSpaceInString(target);
@@ -140,7 +162,7 @@ namespace WRM_TrashRecyclePopulation
                 }
             } else if (target.Length != 5)
             {
-                target = null;
+                throw new WRMNotSupportedException("Identifier Provider: Zip Code cannot be parsed " + target);
             }
             return target;
         }

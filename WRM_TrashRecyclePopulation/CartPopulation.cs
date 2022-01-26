@@ -5,6 +5,7 @@ using System.Linq;
 using System.IO;
 using OfficeOpenXml;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
+using System.Globalization;
 
 namespace WRM_TrashRecyclePopulation
     {
@@ -16,24 +17,19 @@ namespace WRM_TrashRecyclePopulation
         public Dictionary<string, Cart> cartPopulationDictionary;
 
         public static string xlsxSNMasterlistPath = @"C:\Users\rwaltz\Documents\SolidWaste\SN_MASTERLIST_Current.xlsm";
-        static private IEnumerable<KGISAddress> kgisCityResidentAddressList;
+        // static private IEnumerable<KGISAddress> kgisCityResidentAddressList;
         private ExcelWorksheet worksheet;
         private int totalRowsWorksheet;
         private int firstWorksheetColumn;
         private int lastWorksheetColumn;
-        private ServiceTrashDayImporter serviceTrashDayImporter;
+        //private ServiceTrashDayImporter serviceTrashDayImporter;
 
-        static public IEnumerable<KGISAddress> KgisCityResidentAddressList { get => kgisCityResidentAddressList; set => kgisCityResidentAddressList = value; }
+        // static public IEnumerable<KGISAddress> KgisCityResidentAddressList { get => kgisCityResidentAddressList; set => kgisCityResidentAddressList = value; }
 
 
-        public CartPopulation(WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle wrmTrashRecycleContext)
+        public CartPopulation()
             {
-            wrmTrashRecycleContext = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext;
-            if (KgisCityResidentAddressList == null)
-                {
-                KgisCityResidentAddressList = WRM_TrashRecycleQueries.retrieveKgisCityResidentAddressList();
-                }
-            this.serviceTrashDayImporter = ServiceTrashDayImporter.getServiceTrashDayImporter();
+
             xlsxSNMasterlistFileInfo = new FileInfo(xlsxSNMasterlistPath);
             if (!xlsxSNMasterlistFileInfo.Exists)
                 {
@@ -52,6 +48,7 @@ namespace WRM_TrashRecyclePopulation
             {
             try
                 {
+                AddressPopulation addressPopulation = new AddressPopulation();
                 DateTime begin = DateTime.Now;
                 DateTime beforeNow = DateTime.Now;
                 DateTime justNow = DateTime.Now;
@@ -60,110 +57,154 @@ namespace WRM_TrashRecyclePopulation
                 String logLine;
                 int maxToProcess = 0;
 
-                logLine = "begin populateCarts";
-                //               WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
+                logLine = "Start Cart Population";
+                WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 for (int row = 2; row <= totalRowsWorksheet; row++)
                     {
-                                  //     if (maxToProcess >= 1000)
-                                  //         {
-                    //
-                                   //       break;
-                                   //     }
-                    ++maxToProcess;
-
-                    // has the default manner to 
-                    Address address = extractAddressFromWorksheet(worksheet, row);
-
-                    if (address == null)
+                    try
                         {
-                        continue;
-                        }
-                    string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
-
-                    if (AddressPopulation.AddressDictionary.ContainsKey(dictionaryKey))
-                        {
-                        address = AddressPopulation.AddressDictionary[dictionaryKey];
-                        }
-                    else
-                        {
-                        address = populateAddress(dictionaryKey, address);
-
+                        if (maxToProcess % 200 == 0)
+                            {
+                            logLine = "Cart Population " + maxToProcess;
+                            WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                            WRMLogger.Logger.log();
+                            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                            //         break;
+                            ++maxToProcess;
+                            }
+                        // has the default manner to 
+                        Address address = createAddressFromServiceDayWorksheet(worksheet, row);
+                        string addressType = extractAddressTypeFromWorksheet(worksheet, row);
+                        int foundAddressId = 0;
                         if (address == null)
                             {
                             continue;
                             }
-
-                        }
-
-                    string trashdictionaryKey = dictionaryKey + "TRASH";
-                    if (!this.cartPopulationDictionary.ContainsKey(trashdictionaryKey))
-                        {
-                        //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                        Cart trashCartHistory = buildCart(row, address.AddressID, 8, 9, false, true);
-                        if (trashCartHistory != null)
+                        string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
+                        if (AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
                             {
-                            saveAndDeleteCart(trashCartHistory);
-                            }
-                        trashCartHistory = buildCart(row, address.AddressID, 10, 11, false, true);
-                        if (trashCartHistory != null)
-                            {
-                            saveAndDeleteCart(trashCartHistory);
-                            }
-                        trashCartHistory = buildCart(row, address.AddressID, 12, 13, false, true);
-                        if (trashCartHistory != null)
-                            {
-                            saveAndDeleteCart(trashCartHistory);
-                            }
-                        Cart trashcart = buildCart(row, address.AddressID, 6, 7, false, false);
-                        if (trashcart != null)
-                            {
-
-                            trashcart = saveCart(trashcart);
-                            this.cartPopulationDictionary.Add(trashdictionaryKey, trashcart);
+                            // overwrite address type if populated in spreadsheet
+                            address.AddressID = foundAddressId;
+                            if ((addressType != null) && !addressType.Equals(AddressPopulation.AddressDictionary[dictionaryKey].AddressType))
+                                
+                                {
+                                var currentState = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Entry(AddressPopulation.AddressDictionary[dictionaryKey]).State;
+                                WRMLogger.LogBuilder.AppendLine("Before Cart Address Update " + AddressPopulation.AddressDictionary[dictionaryKey] + " has a state of " + currentState.ToString());
+                                AddressPopulation.AddressDictionary[dictionaryKey].AddressType = addressType;
+                                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(AddressPopulation.AddressDictionary[dictionaryKey]);
+                                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                                currentState = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Entry(AddressPopulation.AddressDictionary[dictionaryKey]).State;
+                                WRMLogger.LogBuilder.AppendLine("After Cart Address Update " + AddressPopulation.AddressDictionary[dictionaryKey] + " has a state of " + currentState.ToString());
+                                }
                             }
                         else
                             {
-                            WRMLogger.LogBuilder.AppendLine("NO TRASH CART FOR ADDRESS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "] \n");
-                            }
-                        }
-                    string recycledictionaryKey = dictionaryKey + "RECYCLE";
-                    if (!this.cartPopulationDictionary.ContainsKey(recycledictionaryKey))
-                        {
-                        //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                        Cart recyclingCartHistory = buildCart(row, address.AddressID, 16, 17, true, true);
-                        if (recyclingCartHistory != null)
-                            {
-                            recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
+                            foundAddressId = addressPopulation.addAddressToWRM_TrashRecycle(address);
                             }
 
-                        recyclingCartHistory = buildCart(row, address.AddressID, 18, 19, true, true);
-                        if (recyclingCartHistory != null)
+                        string trashdictionaryKey = dictionaryKey + "TRASH";
+                        if (!this.cartPopulationDictionary.ContainsKey(trashdictionaryKey))
                             {
-                            recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
+                            //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
+                            Cart trashCartHistory = buildCart(row, foundAddressId, 8, 9, false, true);
+                            if (trashCartHistory != null)
+                                {
+                                saveAndDeleteCart(trashCartHistory);
+                                }
+                            trashCartHistory = buildCart(row, foundAddressId, 10, 11, false, true);
+                            if (trashCartHistory != null)
+                                {
+                                saveAndDeleteCart(trashCartHistory);
+                                }
+                            trashCartHistory = buildCart(row, foundAddressId, 12, 13, false, true);
+                            if (trashCartHistory != null)
+                                {
+                                saveAndDeleteCart(trashCartHistory);
+                                }
+                            Cart trashcart = buildCart(row, foundAddressId, 6, 7, false, false);
+                            if (trashcart != null)
+                                {
+
+                                trashcart = saveCart(trashcart);
+                                this.cartPopulationDictionary.Add(trashdictionaryKey, trashcart);
+                                }
+                            else
+                                {
+                                WRMLogger.LogBuilder.AppendLine("NO TRASH CART FOR ADDRESS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "] \n");
+                                }
                             }
-                        Cart recyclingCart = buildCart(row, address.AddressID, 14, 15, true, true);
-                        if (recyclingCart != null)
+                        string recycledictionaryKey = dictionaryKey + "RECYCLE";
+                        if (!this.cartPopulationDictionary.ContainsKey(recycledictionaryKey))
                             {
-                            recyclingCart = saveCart(recyclingCart);
-                            this.cartPopulationDictionary.Add(recycledictionaryKey, recyclingCart);
+                            //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
+                            Cart recyclingCartHistory = buildCart(row, address.AddressID, 16, 17, true, true);
+                            if (recyclingCartHistory != null)
+                                {
+                                recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
+                                }
+
+                            recyclingCartHistory = buildCart(row, address.AddressID, 18, 19, true, true);
+                            if (recyclingCartHistory != null)
+                                {
+                                recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
+                                }
+                            Cart recyclingCart = buildCart(row, address.AddressID, 14, 15, true, true);
+                            if (recyclingCart != null)
+                                {
+                                recyclingCart = saveCart(recyclingCart);
+                                this.cartPopulationDictionary.Add(recycledictionaryKey, recyclingCart);
+
+                                }
                             }
+                        }
+                    catch (WRMNullValueException ex)
+                        {
+                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + row + " " + ex.Message);
+                        /*
+                        WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+
+                        Exception inner = ex.InnerException;
+                        if (inner != null)
+                            {
+                            WRMLogger.LogBuilder.AppendLine(inner.Message);
+                            WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                            }
+                        */
+                        }
+                    catch (WRMNotSupportedException ex)
+                        {
+                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + row + " " + ex.Message );
+                        /*
+                        WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+
+                        Exception inner = ex.InnerException;
+                        if (inner != null)
+                            {
+                            WRMLogger.LogBuilder.AppendLine(inner.Message);
+                            WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                            }
+                        */
                         }
                     //                    WRMLogger.Logger.log();
                     }
-                logLine = "end populateCarts";
+
+                
+                justNow = DateTime.Now;
+                timeDiff = justNow - beforeNow;
+                WRMLogger.LogBuilder.AppendLine("End " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
                 //                WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
                 WRMLogger.Logger.log();
                 }
             catch (Exception ex)
                 {
-
-                WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}",
-                  ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
+                WRMLogger.LogBuilder.AppendLine(ex.Message);
                 WRMLogger.LogBuilder.AppendLine(ex.ToString());
                 WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
                 Exception inner = ex.InnerException;
                 if (inner != null)
                     {
+                    WRMLogger.LogBuilder.AppendLine(inner.Message);
                     WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
                     }
                 WRMLogger.Logger.log();
@@ -184,7 +225,7 @@ namespace WRM_TrashRecyclePopulation
                 {
                 //This color means unable to identify correct/current serial number since IPL delivered 2 in the original rollout-- need to look into in person. Could also mean we need to know what SN is there because nothing was recorded.
                 unknown = true;
-               
+
                 }
 
 
@@ -203,7 +244,7 @@ namespace WRM_TrashRecyclePopulation
                         {
                         if (serialNumber.Equals("NO TRASH"))
                             {
-                            return null;
+                            throw new WRMNullValueException("Serial Number is NO TRASH in row " + row);
                             }
                         else
                             {
@@ -240,12 +281,12 @@ namespace WRM_TrashRecyclePopulation
                     }
                 catch (FormatException ex)
                     {
-                   WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}", ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
+                    WRMLogger.LogBuilder.AppendLine(ex.Message);
                     WRMLogger.LogBuilder.AppendLine(ex.ToString());
                     Exception inner = ex.InnerException;
                     if (inner != null)
                         {
-
+                        WRMLogger.LogBuilder.AppendLine(inner.Message);
                         WRMLogger.LogBuilder.AppendLine(inner.ToString());
                         }
                     }
@@ -258,7 +299,7 @@ namespace WRM_TrashRecyclePopulation
                 {
                 cart.IsRecyclingCart = false;
                 }
-            
+
             cart.AddressID = addressId;
             cart.CreateDate = DateTime.Now;
             cart.CreateUser = "WRM_TrashRecyclePopulation";
@@ -271,16 +312,17 @@ namespace WRM_TrashRecyclePopulation
 
         public Cart saveCart(Cart cart)
             {
-            
+
             string serialNumber = cart.CartSerialNumber;
             if (String.IsNullOrWhiteSpace(serialNumber))
                 {
-                return null;
+                throw new WRMNullValueException("Cart Serial Number is Null");
                 }
             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(cart);
-            // logBuilder.AppendLine("Add " + request.StreetNumber + "  " + request.StreetName);
-            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+            dynamic currentState = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Entry(cart).State;
+            WRMLogger.LogBuilder.AppendLine("After Cart Add  has a state of " + currentState.ToString());
+            // logBuilder.AppendLine("Add " + request.StreetNumber + "  " + request.StreetName);
 
 
             /*
@@ -325,13 +367,38 @@ namespace WRM_TrashRecyclePopulation
         public Cart saveAndDeleteCart(Cart cart)
             {
             cart = saveCart(cart);
+            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Remove(cart);
+            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+            dynamic currentState = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Entry(cart).State;
+            WRMLogger.LogBuilder.AppendLine("After Cart Add  has a state of " + currentState.ToString());
             // logBuilder.AppendLine("Add " + request.StreetNumber + "  " + request.StreetName);
             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
             return cart;
             }
-        private Address extractAddressFromWorksheet(ExcelWorksheet worksheet, int row)
+
+        private string extractAddressTypeFromWorksheet(ExcelWorksheet worksheet, int row)
+            {
+
+            ExcelRange commercialAccount = worksheet.Cells[row, 21];
+            ExcelRange specialtyAccount = worksheet.Cells[row, 23];
+
+            if (commercialAccount != null && commercialAccount.Value != null && !string.IsNullOrEmpty(commercialAccount.Value.ToString()))
+                {
+                return "COMMERCIAL";
+                }
+
+            if (specialtyAccount != null && specialtyAccount.Value != null && !string.IsNullOrEmpty(specialtyAccount.Value.ToString()))
+                {
+                return "SPECIALTY";
+                }
+
+            return null;
+            }
+
+        private Address createAddressFromServiceDayWorksheet(ExcelWorksheet worksheet, int row)
             {
 
             // First determine if address should be added or ignored. if ignored, then return null
@@ -388,7 +455,19 @@ namespace WRM_TrashRecyclePopulation
             ExcelRange streetNumberCell = worksheet.Cells[row, 1];
             ExcelRange streetNameCell = worksheet.Cells[row, 2];
             ExcelRange streetNameNumberCell = worksheet.Cells[row, 3];
-            if (streetNameNumberCell == null || streetNameNumberCell.Value == null || streetNameCell == null || streetNameCell.Value == null || String.IsNullOrEmpty(streetNameCell.Value.ToString()) || String.IsNullOrEmpty(streetNumberCell.Value.ToString()))
+
+            if (!(streetNumberCell == null || streetNumberCell.Value == null || streetNameCell == null || streetNameCell.Value == null ||
+                String.IsNullOrEmpty(streetNameCell.Value.ToString()) || String.IsNullOrEmpty(streetNumberCell.Value.ToString())))
+                {
+                string streetName = streetNameCell.Value.ToString();
+                address.StreetName = IdentifierProvider.normalizeStreetName(streetName);
+
+                string streetNumber = streetNumberCell.Value.ToString();
+                int streetNumberInt32 = IdentifierProvider.normalizeStreetNumber(streetNumber);
+
+                address.StreetNumber = streetNumberInt32;
+                }
+            else if (!(streetNameNumberCell == null && streetNameNumberCell.Value == null || String.IsNullOrEmpty(streetNameNumberCell.Value.ToString())))
                 {
 
                 if (streetNameNumberCell.Value != null)
@@ -403,286 +482,31 @@ namespace WRM_TrashRecyclePopulation
                     address.StreetName = IdentifierProvider.normalizeStreetName(streetName);
                     }
                 }
-            else if (!(streetNumberCell == null || streetNumberCell.Value == null || streetNameCell == null || streetNameCell.Value == null || 
-                String.IsNullOrEmpty(streetNameCell.Value.ToString()) && String.IsNullOrEmpty(streetNumberCell.Value.ToString())))
-                {
-                string streetName = streetNameCell.Value.ToString();
-                address.StreetName = IdentifierProvider.normalizeStreetName(streetName);
-
-                string streetNumber = streetNumberCell.Value.ToString();
-                int streetNumberInt32 = IdentifierProvider.normalizeStreetNumber(streetNumber);
-
-                address.StreetNumber = streetNumberInt32;
-                }
             else
                 {
-                return null;
+                throw new WRMNullValueException("Street and Number Address values for cart at row" + row + " empty");
                 }
             ExcelRange unitCell = worksheet.Cells[row, 4];
-            if (unitCell.Value != null)
+            if (unitCell != null && unitCell.Value != null && !string.IsNullOrEmpty(unitCell.Value.ToString()))
                 {
                 string unitNumber = unitCell.Value.ToString();
                 address.UnitNumber = IdentifierProvider.normalizeUnitNumber(unitNumber);
                 }
             ExcelRange zipCell = worksheet.Cells[row, 5];
-            if (zipCell.Value != null)
+            if (zipCell != null && zipCell.Value != null && !string.IsNullOrEmpty(zipCell.Value.ToString()))
                 {
 
                 String zipString = zipCell.Value.ToString();
                 address.ZipCode = IdentifierProvider.normalizeZipCode(zipString);
 
                 }
-            return address;
-            }
-
-        /* if you recieve a NotSupportedException trying to find an address type, address is assigned null, an error is printed, and processing goes on to the next record */
-        private Address populateAddress(String dictionaryKey, Address address)
-            {
-            address = getAddressFromGIS(address);
-            if (address != null)
-                {
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
-                //                WRMLogger.LogBuilder.AppendLine("Adding " + dictionaryKey);
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-
-                AddressPopulation.AddressDictionary[dictionaryKey] = address;
-                }
-            return address;
-            }
-        /* if you recieve a NotSupportedException trying to find an address type, address is assigned null, an error is printed, and processing goes on to the next record */
-        private Address getAddressFromGIS(Address address)
-            {
-            if (address == null || String.IsNullOrEmpty(address.StreetName))
-                {
-                return null;
-                }
-
-            //KgisCityResidentAddressList
-            //  IEnumerable<KGISAddress> foundKgisResidentAddress = kgisCityResidentAddressList.Where(req => req.StreetName.ToUpper().Equals(request.StreetName.ToUpper()));
-            List<KGISAddress> foundKgisResidentAddress = WRM_TrashRecycleQueries.findKGISAddressList(address);
-
-
- //           IEnumerator<KGISAddress> foundKgisResidentAddressEnumerator = foundKgisResidentAddress.GetEnumerator();
-
-
-            int countFoundAddresses = foundKgisResidentAddress.Count();
-
-            switch (countFoundAddresses)
-                {
-                case 0:
-                    if (WRM_TrashRecycleQueries.determineAddressFailure(address))
-                        {
-                        WRMLogger.LogBuilder.AppendLine(" FOR ADDRESS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "]! \n");
-
-                        }
-                    else
-                        {
-                        WRMLogger.LogBuilder.AppendLine("ADDRESS DOES NOT EXIST [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "] does not exist! \n");
-                        }
-                    address = null;
-                    break;
-                case 1:
-                    try
-                        {
-                        address = this.buildAddressFromEnumerator(address, foundKgisResidentAddress);
-                        }
-                    catch (NotSupportedException nex)
-                        {
-
-                        WRMLogger.LogBuilder.AppendLine("TYPE ADDRESS IS NOT VALID. [" + address.StreetNumber + "][" + address.StreetName + "][" + address.UnitNumber + "][" + address.AddressType + "]  ");
-                        address = null;
-                        WRMLogger.Logger.log();
-                        }
-                    catch (Exception ex)
-                        {
-                        WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}", ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);
-                        WRMLogger.LogBuilder.AppendLine(ex.ToString());
-                        Exception inner = ex.InnerException;
-                        if (inner != null)
-                            {
-                            WRMLogger.LogBuilder.AppendLine("INNER " + inner.ToString());
-                            }
-                        if (address != null)
-                            {
-                            WRMLogger.LogBuilder.AppendLine("ADDRESS IS NOT VALID. [" + address.StreetNumber + "][" + address.StreetName + "][" + address.UnitNumber + "][" + address.ZipCode + "] does not exist!");
-                            }
-                        WRMLogger.Logger.log();
-                        throw ex;
-                        }
-
-                    // request.FirstName; request.LastName, request.PhoneNumber; request.Email;
-                    break;
-                case 2:
-                case 3:
-                case 4:
-                    try
-                        {
-                        address = this.buildAddressWithUnitFromEnumerator(address, foundKgisResidentAddress);
-
-                        }
-                    catch (NotSupportedException nex)
-                        {
-
-                        WRMLogger.LogBuilder.AppendLine("TYPE ADDRESS IS NOT VALID. [" + address.StreetNumber + "][" + address.StreetName + "][" + address.UnitNumber + "] ");
-                        address = null;
-                        }
-                    catch (Exception ex)
-                        {
-                        WRMLogger.LogBuilder.AppendFormat("Exception:{0} : {1} : {2} : {3}{4}", ex.HResult, ex.Message, ex.TargetSite, ex.HelpLink, Environment.NewLine);																																																																												 
-                        WRMLogger.LogBuilder.AppendLine(ex.ToString());
-                        Exception inner = ex.InnerException;
-                        if (inner != null)
-                            {
-                            WRMLogger.LogBuilder.AppendLine(inner.ToString());
-                            }
-                        if (address != null)
-                            {
-                            WRMLogger.LogBuilder.AppendLine("ADDRESS IS NOT VALID. [" + address.StreetNumber + "][" + address.StreetName + "][" + address.UnitNumber + "][" + address.ZipCode + "] does not exist!");
-                            }
-                        WRMLogger.Logger.log();
-                        throw ex;
-                        }
-                    break;
-                default:
-
-                    WRMLogger.LogBuilder.AppendLine("MORE THAN FOUR UNITS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] has more than 4  units!");
-                    address = null;
-                    break;
-                }
-            return address;
-            }
-        //  //  IEnumerable<KGISAddress> foundKgisResidentAddress
-
-        private Address buildAddressWithUnitFromEnumerator(Address address, IEnumerable<KGISAddress> foundKgisResidentAddress)
-            {
-
-
-            if (foundKgisResidentAddress.Count() > 0)
-                {
-                if (!String.IsNullOrEmpty(address.UnitNumber))
-                    {
-                    string UnitNumber = address.UnitNumber.ToUpper();
-                    // Need to make certain that KGISAddress does have a Unit. Just because we find one residence has a unit does not mean all addresses at the street number have units.
-                    // there might be a primary address that has two apartments and each have their own cart
-                    IEnumerable<KGISAddress> foundKgisCityResidentAddressUnitEnumerable =
-                        from req in foundKgisResidentAddress
-                        where (!(String.IsNullOrEmpty(req.UNIT)) && req.UNIT.Equals(UnitNumber))
-                        select req;
-
-
-                    if (foundKgisCityResidentAddressUnitEnumerable.Count() == 1)
-                        {
-
-                        KGISAddress kgisCityResidentAddressUnit = foundKgisCityResidentAddressUnitEnumerable.First();
-                        address = buildAddress(kgisCityResidentAddressUnit);
-                        //                        WRMLogger.LogBuilder.AppendLine("FOUND IN KGIS [" + address.StreetNumber + "][" + address.StreetName + "][" + address.UnitNumber + "] ");
-                        }
-                    else
-                        {
-                        // Did not Find the Unit Address in KGIS . Use the Address parsed from Excel.
-
-
-                        /*
-                                    IEnumerable<KGISAddress> foundKgisResidentAddressUnit =
-                            from req in foundKgisResidentAddressEnumerator
-                            where Decimal.ToInt32(req.AddressNum ?? 0) == address.StreetNumber && req.StreetName.Equals(address.StreetName)
-                            select req;
-                        */
-
-                        // this should loop to find all the addresses.
-
-                        Address newAddress = buildAddress(foundKgisResidentAddress.First());
-                        newAddress.UnitNumber = address.UnitNumber;
-                        // Now that we have a GIS address, attempt to find it again.
-                        string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(newAddress.StreetName, newAddress.StreetNumber, newAddress.UnitNumber, newAddress.ZipCode);
-
-                        if (AddressPopulation.AddressDictionary.ContainsKey(dictionaryKey))
-                            {
-                            address = AddressPopulation.AddressDictionary[dictionaryKey];
-                            }
-                        else
-                            {
-                            address = newAddress;
-                            }
-                        //                       WRMLogger.LogBuilder.AppendLine("IN KGIS [" + address.StreetNumber + "][" + address.StreetName + "] with [" + address.UnitNumber + "] does not exist! ");
-                        }
-                    }
-                else
-                    {
-                    address = buildAddressFromEnumerator(address, foundKgisResidentAddress);
-                    }
-                }
             else
                 {
-                throw new Exception("foundKgisResidentAddress.Count is 0");
+                throw new WRMNullValueException("Zip Code value for cart at row" + row + " empty");
                 }
             return address;
-            // potentially multiple address, create one for each
-
             }
-        private Address buildAddressFromEnumerator(Address address, IEnumerable<KGISAddress> foundKgisResidentAddress)
-            {
 
-            IEnumerator<KGISAddress> foundKgisResidentAddressEnumerator = foundKgisResidentAddress.GetEnumerator();
-
-            if (foundKgisResidentAddressEnumerator.Current == null)
-                {
-                foundKgisResidentAddressEnumerator.MoveNext();
-
-                }
-
-            KGISAddress kgisCityResidentAddress = foundKgisResidentAddressEnumerator.Current;
-            if (kgisCityResidentAddress == null) throw new Exception("Can not find KGISAddress");
-            address = buildAddress(kgisCityResidentAddress);
-            return address;
-
-
-            }
-        public Address buildAddress(KGISAddress kgisCityResidentAddress)
-            {
-            Address address = new Address();
-            address.AddressType = AddressPopulation.translateAddressTypeFromKGISAddressUse(kgisCityResidentAddress);
-
-            address.GISParcelID= kgisCityResidentAddress.PARCELID;
-
-            address.StreetName = IdentifierProvider.normalizeStreetName(kgisCityResidentAddress.STREET_NAME);
-            address.StreetNumber = Convert.ToInt32(kgisCityResidentAddress.ADDRESS_NUM);
-            address.ZipCode = kgisCityResidentAddress.ZIP_CODE.ToString();
-            address.GISAddressUseType = kgisCityResidentAddress.ADDRESS_USE_TYPE;
-
-            address.GISLatitude = kgisCityResidentAddress.LATITUDE;
-            address.GISLongitude = kgisCityResidentAddress.LONGITUDE;
-            address.GISPointX = kgisCityResidentAddress.POINT_X;
-            address.GISPointY = kgisCityResidentAddress.POINT_Y;
-
-            string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
-            //            WRMLogger.LogBuilder.AppendLine(dictionaryKey + " has a type of " + address.AddressType);
-            if (this.serviceTrashDayImporter.addressDictionary.ContainsKey(dictionaryKey))
-                {
-
-                Address serviceDayAddress = this.serviceTrashDayImporter.addressDictionary[dictionaryKey];
-                if (serviceDayAddress.RecyclingPickup ?? false)
-                    {
-                    address.RecycleDayOfWeek = serviceDayAddress.RecycleDayOfWeek;
-                    address.RecycleFrequency = serviceDayAddress.RecycleFrequency;
-                    }
-
-                if (address.TrashPickup ?? false)
-                    {
-                    address.TrashPickup = serviceDayAddress.TrashPickup;
-                    address.TrashDayOfWeek = serviceDayAddress.TrashDayOfWeek;
-                    }
-
-                }
-            else
-                {
-                // log that the address does not have a service day
-                }
-
-            return address;
-
-            }
         }
 
     }
