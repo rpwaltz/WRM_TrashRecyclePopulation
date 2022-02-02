@@ -425,7 +425,7 @@ namespace WRM_TrashRecyclePopulation
             }
 
         /* if you recieve a NotSupportedException trying to find an address type, address is assigned null, an error is printed, and processing goes on to the next record */
-        private void populateAddressFromKGIS(ref Address address)
+        public static void populateAddressFromKGIS(ref Address address)
             {
             if (address == null || String.IsNullOrEmpty(address.StreetName))
                 {

@@ -14,9 +14,15 @@ namespace WRM_TrashRecyclePopulation
         {
         private FileInfo xlsxSNMasterlistFileInfo;
 
-        public Dictionary<string, Cart> cartPopulationDictionary;
+        public Dictionary<int, Cart> cartPopulationDictionary;
 
-        public static string xlsxSNMasterlistPath = @"C:\Users\rwaltz\Documents\SolidWaste\SN_MASTERLIST_Current.xlsm";
+        public Dictionary<int, Cart> recyclingCartPopulationDictionary;
+
+        public List<int> cartsAddedDuringPopulation = new List<int>();
+
+        public List<string> ignoreCartDuringPopulation = new List<string>();
+
+        public static string xlsxSNMasterlistPath = @"C:\Users\rwaltz\Documents\SolidWaste\SN_MASTERLIST_Current.xlsx";
         // static private IEnumerable<KGISAddress> kgisCityResidentAddressList;
         private ExcelWorksheet worksheet;
         private int totalRowsWorksheet;
@@ -35,8 +41,8 @@ namespace WRM_TrashRecyclePopulation
                 {
                 throw new Exception(xlsxSNMasterlistPath + "does not exist");
                 }
-            cartPopulationDictionary = new Dictionary<string, Cart>();
-
+            cartPopulationDictionary = new Dictionary<int, Cart>();
+            recyclingCartPopulationDictionary = new Dictionary<int, Cart>();
             ExcelPackage package = new ExcelPackage(xlsxSNMasterlistFileInfo);
             worksheet = package.Workbook.Worksheets[0];
             totalRowsWorksheet = worksheet.Dimension.End.Row;
@@ -48,7 +54,6 @@ namespace WRM_TrashRecyclePopulation
             {
             try
                 {
-                AddressPopulation addressPopulation = new AddressPopulation();
                 DateTime begin = DateTime.Now;
                 DateTime beforeNow = DateTime.Now;
                 DateTime justNow = DateTime.Now;
@@ -57,139 +62,433 @@ namespace WRM_TrashRecyclePopulation
                 String logLine;
                 int maxToProcess = 0;
 
-                logLine = "Start Cart Population";
+                // populate all the addresses that are new
+                WRMLogger.Logger.logMessageAndDeltaTime("addAddressesFromSNMasterList ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                addAddressesFromSNMasterList();
+                WRMLogger.Logger.logMessageAndDeltaTime("addFirstTrashCarts ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                addFirstTrashCarts();
+//                WRMLogger.LogBuilder.AppendLine("addSecondTrashCarts");
+                //          addSecondTrashCarts();
+//                WRMLogger.LogBuilder.AppendLine("addThirdTrashCarts");
+                //          addThirdTrashCarts();
+//                WRMLogger.LogBuilder.AppendLine("addCurrentTrashCarts");
+                //          addCurrentTrashCarts();
+//                WRMLogger.LogBuilder.AppendLine("addFirstRecyclingCarts");
+
+                //          addFirstRecyclingCarts();
+//                WRMLogger.LogBuilder.AppendLine("addSecondRecyclingCarts");
+                //          addSecondRecyclingCarts();
+//                WRMLogger.LogBuilder.AppendLine("addCurrentTrashCarts");
+                //          addCurrentRecyclingCarts();
+                //update any addresses with new Address types, commercial and specialty
+
+
+                // initial inserts..  the fields will be different depending on how many carts have been issued to an address
+
+                // delete initial inserts and insert new cart round 2
+
+                //delete round 2 carts and insert new cart round 3
+
+
+
+                /*
+logLine = "Start Cart Population";
+WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+for (int row = 2; row <= totalRowsWorksheet; row++)
+{
+try
+{
+if (maxToProcess % 200 == 0)
+    {
+    logLine = "Cart Population " + maxToProcess;
+    WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+    WRMLogger.Logger.log();
+    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+    //         break;
+    ++maxToProcess;
+    }
+// has the default manner to 
+Address address = createAddressFromWorksheet(worksheet, row);
+string addressType = populateAddressTypeFromWorksheet(worksheet, row);
+int foundAddressId = 0;
+if (address == null)
+    {
+    continue;
+    }
+string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
+
+if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
+    {
+    throw new WRMNullValueException("AddressId not found in AddressIdentiferDictionary " + dictionaryKey);
+    }
+
+string trashdictionaryKey = dictionaryKey + "TRASH";
+
+if (!this.cartPopulationDictionary.ContainsKey(trashdictionaryKey))
+    {
+    //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
+    Cart trashCartHistory = buildCart(row, foundAddressId, 8, 9, false, true);
+    if (trashCartHistory != null)
+        {
+        saveAndDeleteCart(trashCartHistory);
+        }
+    trashCartHistory = buildCart(row, foundAddressId, 10, 11, false, true);
+    if (trashCartHistory != null)
+        {
+        saveAndDeleteCart(trashCartHistory);
+        }
+    trashCartHistory = buildCart(row, foundAddressId, 12, 13, false, true);
+    if (trashCartHistory != null)
+        {
+        saveAndDeleteCart(trashCartHistory);
+        }
+    Cart trashcart = buildCart(row, foundAddressId, 6, 7, false, false);
+    if (trashcart != null)
+        {
+
+        trashcart = saveCart(trashcart);
+        this.cartPopulationDictionary.Add(trashdictionaryKey, trashcart);
+        }
+    else
+        {
+        WRMLogger.LogBuilder.AppendLine("NO TRASH CART FOR ADDRESS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "] \n");
+        }
+    }
+string recycledictionaryKey = dictionaryKey + "RECYCLE";
+if (!this.cartPopulationDictionary.ContainsKey(recycledictionaryKey))
+    {
+    //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
+    Cart recyclingCartHistory = buildCart(row, address.AddressID, 16, 17, true, true);
+    if (recyclingCartHistory != null)
+        {
+        recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
+        }
+
+    recyclingCartHistory = buildCart(row, address.AddressID, 18, 19, true, true);
+    if (recyclingCartHistory != null)
+        {
+        recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
+        }
+    Cart recyclingCart = buildCart(row, address.AddressID, 14, 15, true, true);
+    if (recyclingCart != null)
+        {
+        recyclingCart = saveCart(recyclingCart);
+        this.cartPopulationDictionary.Add(recycledictionaryKey, recyclingCart);
+
+        }
+    }
+
+                }
+            catch (WRMNullValueException ex)
+                        {
+                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + row + " " + ex.Message);
+
+                        }
+                    catch (WRMNotSupportedException ex)
+                        {
+                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + row + " " + ex.Message );
+
+                        }
+                    //                    WRMLogger.Logger.log();
+                    }
+
+                */
+                justNow = DateTime.Now;
+                timeDiff = justNow - beforeNow;
+                WRMLogger.LogBuilder.AppendLine("End " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
+                //                WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
+                WRMLogger.Logger.log();
+                }
+            catch (Exception ex)
+                {
+                WRMLogger.LogBuilder.AppendLine(ex.Message);
+                WRMLogger.LogBuilder.AppendLine(ex.ToString());
+                WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+                Exception inner = ex.InnerException;
+                if (inner != null)
+                    {
+                    WRMLogger.LogBuilder.AppendLine(inner.Message);
+                    WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                    }
+                WRMLogger.Logger.log();
+                throw ex;
+                }
+            }
+        public void addCurrentTrashCarts()
+            {
+            try
+                {
+
+                addCarts(6, 7, false, false);
+
+
+                }
+            catch (Exception ex)
+                {
+                WRMLogger.LogBuilder.AppendLine(ex.Message);
+                WRMLogger.LogBuilder.AppendLine(ex.ToString());
+                WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+                Exception inner = ex.InnerException;
+                if (inner != null)
+                    {
+                    WRMLogger.LogBuilder.AppendLine(inner.Message);
+                    WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                    }
+                WRMLogger.Logger.log();
+                throw ex;
+                }
+            }
+
+
+
+        public void addFirstTrashCarts()
+            {
+            try
+                {
+
+                //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
+                addCarts(8, 9, false, true);
+
+                deleteAllCartsFromContext();
+                }
+            catch (Exception ex)
+                {
+                WRMLogger.LogBuilder.AppendLine(ex.Message);
+                WRMLogger.LogBuilder.AppendLine(ex.ToString());
+                WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+                Exception inner = ex.InnerException;
+                if (inner != null)
+                    {
+                    WRMLogger.LogBuilder.AppendLine(inner.Message);
+                    WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                    }
+                WRMLogger.Logger.log();
+                throw ex;
+                }
+            }
+        public void addSecondTrashCarts()
+            {
+            try
+                {
+
+                addCarts(10, 11, false, true);
+                //                    WRMLogger.Logger.log();
+                deleteAllCartsFromContext();
+                }
+            catch (Exception ex)
+                {
+                WRMLogger.LogBuilder.AppendLine(ex.Message);
+                WRMLogger.LogBuilder.AppendLine(ex.ToString());
+                WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+                Exception inner = ex.InnerException;
+                if (inner != null)
+                    {
+                    WRMLogger.LogBuilder.AppendLine(inner.Message);
+                    WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                    }
+                WRMLogger.Logger.log();
+                throw ex;
+                }
+            }
+
+        public void addThirdTrashCarts()
+            {
+            try
+                {
+                addCarts(12, 13, false, true);
+
+                deleteAllCartsFromContext();
+                }
+            catch (Exception ex)
+                {
+                WRMLogger.LogBuilder.AppendLine(ex.Message);
+                WRMLogger.LogBuilder.AppendLine(ex.ToString());
+                WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+                Exception inner = ex.InnerException;
+                if (inner != null)
+                    {
+                    WRMLogger.LogBuilder.AppendLine(inner.Message);
+                    WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                    }
+                WRMLogger.Logger.log();
+                throw ex;
+                }
+            }
+
+        public void addCurrentRecyclingCarts()
+            {
+            try
+                {
+                addCarts(14, 15, true, false);
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+
+                }
+            catch (Exception ex)
+                {
+                WRMLogger.LogBuilder.AppendLine(ex.Message);
+                WRMLogger.LogBuilder.AppendLine(ex.ToString());
+                WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+                Exception inner = ex.InnerException;
+                if (inner != null)
+                    {
+                    WRMLogger.LogBuilder.AppendLine(inner.Message);
+                    WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                    }
+                WRMLogger.Logger.log();
+                throw ex;
+                }
+            }
+        public void addFirstRecyclingCarts()
+            {
+            try
+                {
+
+                //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
+                addCarts(16, 17, true, true);
+
+                deleteAllCartsFromContext();
+
+                }
+            catch (Exception ex)
+                {
+                WRMLogger.LogBuilder.AppendLine(ex.Message);
+                WRMLogger.LogBuilder.AppendLine(ex.ToString());
+                WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+                Exception inner = ex.InnerException;
+                if (inner != null)
+                    {
+                    WRMLogger.LogBuilder.AppendLine(inner.Message);
+                    WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                    }
+                WRMLogger.Logger.log();
+                throw ex;
+                }
+            }
+
+        public void addSecondRecyclingCarts()
+            {
+            try
+                {
+
+                addCarts(18, 19, true, true);
+                //                    WRMLogger.Logger.log();
+
+                deleteAllCartsFromContext();
+
+                }
+            catch (Exception ex)
+                {
+                WRMLogger.LogBuilder.AppendLine(ex.Message);
+                WRMLogger.LogBuilder.AppendLine(ex.ToString());
+                WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+                Exception inner = ex.InnerException;
+                if (inner != null)
+                    {
+                    WRMLogger.LogBuilder.AppendLine(inner.Message);
+                    WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                    }
+                WRMLogger.Logger.log();
+                throw ex;
+                }
+            }
+
+        public void addAddressesFromSNMasterList()
+            {
+            try
+                {
+                DateTime begin = DateTime.Now;
+                DateTime beforeNow = DateTime.Now;
+                DateTime justNow = DateTime.Now;
+                TimeSpan timeDiff = justNow - beforeNow;
+                double loopMillisecondsPast = 0;
+                String logLine;
+                int maxToProcess = 0;
+
+                // populate all the addresses that are new
+
+                //update any addresses with new Address types, commercial and specialty
+                logLine = "Start Cart Address Population";
                 WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 for (int row = 2; row <= totalRowsWorksheet; row++)
                     {
                     try
                         {
-                        if (maxToProcess % 200 == 0)
+                        if (maxToProcess % 1000 == 0)
                             {
                             logLine = "Cart Population " + maxToProcess;
                             WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                             WRMLogger.Logger.log();
                             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                            //         break;
-                            ++maxToProcess;
+
                             }
+
                         // has the default manner to 
-                        Address address = createAddressFromServiceDayWorksheet(worksheet, row);
-                        string addressType = extractAddressTypeFromWorksheet(worksheet, row);
-                        int foundAddressId = 0;
+                        Address address = createAddressFromWorksheet(worksheet, row);
                         if (address == null)
                             {
                             continue;
                             }
                         string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
-                        if (AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
+                        if (rejectAddress(worksheet, row))
+                            {
+                            ignoreCartDuringPopulation.Add(dictionaryKey);
+                            continue;
+                            }
+                        string addressType = populateAddressTypeFromWorksheet(worksheet, row);
+
+                        Address foundAddress = new Address();
+
+                        if (AddressPopulation.AddressDictionary.TryGetValue(dictionaryKey, out foundAddress))
                             {
                             // overwrite address type if populated in spreadsheet
-                            address.AddressID = foundAddressId;
-                            if ((addressType != null) && !addressType.Equals(AddressPopulation.AddressDictionary[dictionaryKey].AddressType))
-                                
+                            if (!(String.IsNullOrEmpty(addressType)) && !addressType.Equals(foundAddress.AddressType))
+
                                 {
-                                var currentState = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Entry(AddressPopulation.AddressDictionary[dictionaryKey]).State;
-                                WRMLogger.LogBuilder.AppendLine("Before Cart Address Update " + AddressPopulation.AddressDictionary[dictionaryKey] + " has a state of " + currentState.ToString());
+
                                 AddressPopulation.AddressDictionary[dictionaryKey].AddressType = addressType;
                                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(AddressPopulation.AddressDictionary[dictionaryKey]);
-                                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                                currentState = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Entry(AddressPopulation.AddressDictionary[dictionaryKey]).State;
-                                WRMLogger.LogBuilder.AppendLine("After Cart Address Update " + AddressPopulation.AddressDictionary[dictionaryKey] + " has a state of " + currentState.ToString());
+                                ++maxToProcess;
                                 }
+
                             }
                         else
                             {
-                            foundAddressId = addressPopulation.addAddressToWRM_TrashRecycle(address);
-                            }
+                            if (String.IsNullOrEmpty(address.AddressType) && String.IsNullOrEmpty(addressType))
+                                {
+                                throw new WRMNullValueException("Address Type is null for " + dictionaryKey);
+                                }
+                            else if (!String.IsNullOrEmpty(addressType) && !addressType.Equals(address.AddressType))
+                                {
+                                address.AddressType = addressType;
+                                }
+                            ++maxToProcess;
+                            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
 
-                        string trashdictionaryKey = dictionaryKey + "TRASH";
-                        if (!this.cartPopulationDictionary.ContainsKey(trashdictionaryKey))
-                            {
-                            //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                            Cart trashCartHistory = buildCart(row, foundAddressId, 8, 9, false, true);
-                            if (trashCartHistory != null)
-                                {
-                                saveAndDeleteCart(trashCartHistory);
-                                }
-                            trashCartHistory = buildCart(row, foundAddressId, 10, 11, false, true);
-                            if (trashCartHistory != null)
-                                {
-                                saveAndDeleteCart(trashCartHistory);
-                                }
-                            trashCartHistory = buildCart(row, foundAddressId, 12, 13, false, true);
-                            if (trashCartHistory != null)
-                                {
-                                saveAndDeleteCart(trashCartHistory);
-                                }
-                            Cart trashcart = buildCart(row, foundAddressId, 6, 7, false, false);
-                            if (trashcart != null)
-                                {
-
-                                trashcart = saveCart(trashcart);
-                                this.cartPopulationDictionary.Add(trashdictionaryKey, trashcart);
-                                }
-                            else
-                                {
-                                WRMLogger.LogBuilder.AppendLine("NO TRASH CART FOR ADDRESS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "] \n");
-                                }
-                            }
-                        string recycledictionaryKey = dictionaryKey + "RECYCLE";
-                        if (!this.cartPopulationDictionary.ContainsKey(recycledictionaryKey))
-                            {
-                            //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                            Cart recyclingCartHistory = buildCart(row, address.AddressID, 16, 17, true, true);
-                            if (recyclingCartHistory != null)
-                                {
-                                recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
-                                }
-
-                            recyclingCartHistory = buildCart(row, address.AddressID, 18, 19, true, true);
-                            if (recyclingCartHistory != null)
-                                {
-                                recyclingCartHistory = saveAndDeleteCart(recyclingCartHistory);
-                                }
-                            Cart recyclingCart = buildCart(row, address.AddressID, 14, 15, true, true);
-                            if (recyclingCart != null)
-                                {
-                                recyclingCart = saveCart(recyclingCart);
-                                this.cartPopulationDictionary.Add(recycledictionaryKey, recyclingCart);
-
-                                }
                             }
                         }
                     catch (WRMNullValueException ex)
                         {
                         WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + row + " " + ex.Message);
-                        /*
-                        WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
 
-                        Exception inner = ex.InnerException;
-                        if (inner != null)
-                            {
-                            WRMLogger.LogBuilder.AppendLine(inner.Message);
-                            WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
-                            }
-                        */
                         }
                     catch (WRMNotSupportedException ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + row + " " + ex.Message );
-                        /*
-                        WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + row + " " + ex.Message);
 
-                        Exception inner = ex.InnerException;
-                        if (inner != null)
-                            {
-                            WRMLogger.LogBuilder.AppendLine(inner.Message);
-                            WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
-                            }
-                        */
                         }
-                    //                    WRMLogger.Logger.log();
-                    }
 
-                
+                    }
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                foreach (Address address in WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Address.ToList())
+                    {
+                    string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
+                    AddressPopulation.AddressIdentiferDictionary[dictionaryKey] = address.AddressID;
+                    AddressPopulation.ReverseAddressIdentiferDictionary[address.AddressID] = dictionaryKey;
+                    }
                 justNow = DateTime.Now;
                 timeDiff = justNow - beforeNow;
                 WRMLogger.LogBuilder.AppendLine("End " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
@@ -212,6 +511,120 @@ namespace WRM_TrashRecyclePopulation
                 }
             }
 
+        public bool rejectAddress(ExcelWorksheet worksheet, int row)
+            {
+            bool rejectAddress = false;
+
+            ExcelRange addressDemolished = worksheet.Cells[row, 24];
+            if (addressDemolished != null && addressDemolished.Value != null)
+                {
+                if (!String.IsNullOrEmpty(addressDemolished.Value.ToString()) && addressDemolished.Value.ToString().Equals("1"))
+                    {
+                    rejectAddress = true;
+                    }
+                }
+            ExcelRange addressDisapproved = worksheet.Cells[row, 25];
+            if (addressDisapproved != null && addressDisapproved.Value != null)
+                {
+                if (!String.IsNullOrEmpty(addressDisapproved.Value.ToString()) && addressDisapproved.Value.ToString().Equals("1"))
+                    {
+                    rejectAddress = true;
+                    }
+                }
+
+            ExcelRange addressRefusedService = worksheet.Cells[row, 26];
+            if (addressRefusedService != null && addressRefusedService.Value != null)
+                {
+                if (!String.IsNullOrEmpty(addressRefusedService.Value.ToString()) && addressRefusedService.Value.ToString().Equals("1"))
+                    {
+                    rejectAddress = true;
+                    }
+                }
+
+            return rejectAddress;
+            }
+
+        public void addCarts(int trashDeliveryDateCellId, int cartSNCellId, bool isRecyclingCart, bool failUnknown)
+            {
+            try
+                {
+
+                cartsAddedDuringPopulation.Clear();
+
+                int maxToProcess = 0;
+                for (int row = 2; row <= totalRowsWorksheet; row++)
+                    {
+                    try
+                        {
+
+                        if (maxToProcess % 1000 == 0)
+                            {
+                            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+
+                            }
+                        Address address = createAddressFromWorksheet(worksheet, row);
+                        if (address == null)
+                            {
+                            throw new WRMNullValueException("Address null in worksheet ");
+                            }
+                        int addressId = 0;
+                        string addressKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
+
+
+                        if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(addressKey, out addressId))
+                            {
+                            throw new WRMNullValueException("Address cannot be found in AddressIdentiferDictionary " + addressKey);
+                            }
+                        if ((ignoreCartDuringPopulation.IndexOf(addressKey) >= 0) || (cartsAddedDuringPopulation.IndexOf(addressId) >= 0))
+                            {
+                            WRMLogger.LogBuilder.AppendLine("Ignoring cart at Address: " + addressKey);
+                            continue;
+                            }
+                        Cart cart = buildCart(row, addressId, trashDeliveryDateCellId, cartSNCellId, isRecyclingCart, failUnknown); 
+                        if (cart == null)
+                            {
+                            WRMLogger.LogBuilder.AppendLine("Build cart failed at Address: " + addressKey);
+                            continue;
+                            }
+
+                        saveCart(cart);
+
+                            cartsAddedDuringPopulation.Add(addressId);
+
+                        ++maxToProcess;
+                        }
+                    catch (WRMNullValueException ex)
+                        {
+                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + row + " " + ex.Message);
+
+                        }
+                    catch (WRMNotSupportedException ex)
+                        {
+                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + row + " " + ex.Message);
+
+                        }
+                    //                    WRMLogger.Logger.log();
+                    }
+
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                }
+            catch (Exception ex)
+                {
+                WRMLogger.LogBuilder.AppendLine(ex.Message);
+                WRMLogger.LogBuilder.AppendLine(ex.ToString());
+                WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
+                Exception inner = ex.InnerException;
+                if (inner != null)
+                    {
+                    WRMLogger.LogBuilder.AppendLine(inner.Message);
+                    WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
+                    }
+                WRMLogger.Logger.log();
+                throw ex;
+                }
+            }
         public Cart buildCart(dynamic row, int addressId, int trashDeliveryDateCellId, int trashCartSNCellId, bool isRecyclingCart, bool failUnknown)
             {
 
@@ -223,6 +636,7 @@ namespace WRM_TrashRecyclePopulation
             // The spreadsheet indicates there was a cart at the address, but there no longer is one.  So, we should create the cart instead of return null
             if (currentTrashCartSN.Style.Fill.BackgroundColor.LookupColor().Equals("#FFFFFF00"))
                 {
+                WRMLogger.LogBuilder.AppendLine("Found line that is an unknown cart AddressID = " + addressId);
                 //This color means unable to identify correct/current serial number since IPL delivered 2 in the original rollout-- need to look into in person. Could also mean we need to know what SN is there because nothing was recorded.
                 unknown = true;
 
@@ -230,7 +644,7 @@ namespace WRM_TrashRecyclePopulation
 
 
             Cart cart = new Cart();
-            ExcelRange currentTrashDeliveryDate = worksheet.Cells[row, trashDeliveryDateCellId];
+
             if (unknown)
                 {
                 cart.CartSerialNumber = "UNKNOWN";
@@ -271,13 +685,20 @@ namespace WRM_TrashRecyclePopulation
 
                 }
 
-
+            ExcelRange currentTrashDeliveryDate = worksheet.Cells[row, trashDeliveryDateCellId];
             if (currentTrashDeliveryDate != null && currentTrashDeliveryDate.Value != null)
                 {
                 string currentTrashDeliveryDateString = currentTrashDeliveryDate.Value.ToString();
                 try
                     {
-                    cart.SerialNumberReceivedDate = DateTime.Parse(currentTrashDeliveryDateString);
+                    if (validateDateString(currentTrashDeliveryDateString))
+                        {
+                        cart.SerialNumberReceivedDate = DateTime.Parse(currentTrashDeliveryDateString);
+                        }
+                    else
+                        {
+                        WRMLogger.LogBuilder.AppendLine("Cart Date recieved is invalid " + currentTrashDeliveryDateString);
+                        }
                     }
                 catch (FormatException ex)
                     {
@@ -319,11 +740,6 @@ namespace WRM_TrashRecyclePopulation
                 throw new WRMNullValueException("Cart Serial Number is Null");
                 }
             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(cart);
-            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-            dynamic currentState = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Entry(cart).State;
-            WRMLogger.LogBuilder.AppendLine("After Cart Add  has a state of " + currentState.ToString());
-            // logBuilder.AppendLine("Add " + request.StreetNumber + "  " + request.StreetName);
-
 
             /*
             if (serialNumber.Contains(","))
@@ -363,23 +779,37 @@ namespace WRM_TrashRecyclePopulation
             */
             return cart;
             }
-
-        public Cart saveAndDeleteCart(Cart cart)
+        private void deleteAllCartsFromContext()
+            {
+            int maxBeforeCommit = 0;
+            WRMLogger.Logger.logMessageAndDeltaTime("Start deleteAllCartsFromContext ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+            foreach (Cart cart in WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Cart.ToList())
+                {
+                if (maxBeforeCommit % 1000 == 0)
+                    {
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                    }
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Remove(cart);
+                maxBeforeCommit++;
+                }
+            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+            WRMLogger.Logger.logMessageAndDeltaTime("End deleteAllCartsFromContext ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Cart.ToList().Clear();
+            WRMLogger.Logger.logMessageAndDeltaTime("Clear deleteAllCartsFromContext ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+            }
+        /*
+        public Cart saveAndDeleteCart(Cart cart, int cartDictionaryKey)
             {
             cart = saveCart(cart);
-            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Remove(cart);
-            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-            dynamic currentState = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Entry(cart).State;
-            WRMLogger.LogBuilder.AppendLine("After Cart Add  has a state of " + currentState.ToString());
-            // logBuilder.AppendLine("Add " + request.StreetNumber + "  " + request.StreetName);
-            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Remove(cartPopulationDictionary[cartDictionaryKey]);
+
             return cart;
             }
-
-        private string extractAddressTypeFromWorksheet(ExcelWorksheet worksheet, int row)
+        */
+        private string populateAddressTypeFromWorksheet(ExcelWorksheet worksheet, int row)
             {
 
             ExcelRange commercialAccount = worksheet.Cells[row, 21];
@@ -398,13 +828,13 @@ namespace WRM_TrashRecyclePopulation
             return null;
             }
 
-        private Address createAddressFromServiceDayWorksheet(ExcelWorksheet worksheet, int row)
+        private Address createAddressFromWorksheet(ExcelWorksheet worksheet, int row)
             {
+
 
             // First determine if address should be added or ignored. if ignored, then return null
             for (int i = firstWorksheetColumn; i <= lastWorksheetColumn; ++i)
                 {
-
 
                 ExcelRange excelCell = worksheet.Cells[row, i];
                 if (excelCell.Style.Font.Strike)
@@ -504,7 +934,27 @@ namespace WRM_TrashRecyclePopulation
                 {
                 throw new WRMNullValueException("Zip Code value for cart at row" + row + " empty");
                 }
+            AddressPopulation.populateAddressFromKGIS(ref address);
+
             return address;
+            }
+        static bool validateDateString(string dateValue)
+            {
+            string[] formats = { "MM/dd/yyyy" };
+            DateTime dt = new DateTime();
+            if (DateTime.TryParseExact(dateValue, formats,
+                            System.Globalization.CultureInfo.InvariantCulture,
+                            DateTimeStyles.None, out dt))
+                {
+                DateTime earliestDate = DateTime.Parse("01/01/2010");
+                DateTime latestDate = DateTime.Parse("01/01/9999");
+                if ((dt > earliestDate) && (dt < latestDate))
+                    {
+                    return true;
+                    }
+                }
+
+            return false;
             }
 
         }

@@ -113,7 +113,7 @@ namespace WRM_TrashRecyclePopulation
                 }
             justNow = DateTime.Now;
             timeDiff = justNow - startTime;
-            WRMLogger.LogBuilder.AppendLine("Cart End " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
+            WRMLogger.LogBuilder.AppendLine("Population End " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
             WRMLogger.Logger.log();
 
 
