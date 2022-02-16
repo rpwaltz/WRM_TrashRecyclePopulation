@@ -124,6 +124,7 @@ namespace WRM_TrashRecyclePopulation
                     }
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 Program.logLine = "Updated Added Recycling Addresses: " + numberRequestsUpdates;
                 WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 WRMLogger.Logger.log();
@@ -133,6 +134,7 @@ namespace WRM_TrashRecyclePopulation
                     {
                     string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
                     AddressPopulation.AddressIdentiferDictionary[dictionaryKey] = address.AddressID;
+                    WRMLogger.LogBuilder.AppendLine(dictionaryKey + " = " + address.AddressID);
                     AddressPopulation.ReverseAddressIdentiferDictionary[address.AddressID] = dictionaryKey;
                     }
 
@@ -179,7 +181,7 @@ namespace WRM_TrashRecyclePopulation
 
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                        Program.logLine = "Processed Recycling Residents: " + numberRequestsSaved;
+                        Program.logLine = "Processed Updating added Recycling Residents: " + numberRequestsSaved;
                         WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                         WRMLogger.Logger.log();
                         }
@@ -187,7 +189,10 @@ namespace WRM_TrashRecyclePopulation
                     try
                         {
                         bool isUpdated = updateResidentFromRecycleRequest(recyclingRequest);
-                        ++numberRequestsSaved;
+                        if (isUpdated)
+                            {
+                            ++numberRequestsSaved;
+                            }
                         }
                     catch (Exception ex) when (ex is WRMWithdrawnStatusException || ex is WRMNotSupportedException || ex is WRMNullValueException)
                         {
@@ -197,7 +202,7 @@ namespace WRM_TrashRecyclePopulation
                     }
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                Program.logLine = "Add new Residents " + numberRequestsSaved;
+                Program.logLine = "Updated Added new Residents " + numberRequestsSaved;
                 WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 WRMLogger.Logger.log();
                 
@@ -223,21 +228,7 @@ namespace WRM_TrashRecyclePopulation
                 }
             return false;
             }
-        /*
-        public void populateResidentFromRecycleRequest(RecyclingRequest request)
-            {
-            Resident foundResident = new Resident();
 
-            residentDictionary[dictionaryKey].AddressID = address.AddressID;
-
-                // add a new resident to an existing address
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(resident);
-                residentDictionary[dictionaryKey] = resident;
-                }
- 
-
-            }
-        */
         // The boolean isAdded is true if the request is added to the RecyclingResidentAddressDictionary, if it is an update then it is false
         public bool populateAddressFromRecycleRequest(RecyclingRequest request)
             {
@@ -276,17 +267,19 @@ namespace WRM_TrashRecyclePopulation
                 {
                 if (address != null)
                     {
-                    address.CreateDate = request.CreationDate;
-                    address.CreateUser = request.CreatedBy;
-                    address.UpdateDate = request.LastUpdatedDate;
-                    address.UpdateUser = request.LastUpdatedBy;
+                    // if an address does not already exist then do not add it if it is withdrawn
                     if (!status.Equals("WITHDRAWN"))
                         {
+                        address.CreateDate = request.CreationDate;
+                        address.CreateUser = request.CreatedBy;
+                        address.UpdateDate = request.LastUpdatedDate;
+                        address.UpdateUser = request.LastUpdatedBy;
                         address.RecyclingStatus = status;
                         address.RecyclingPickup = status.Equals("APPROVED");
                         address.RecyclingStatusDate = request.StatusDate;
+                        RecyclingResidentAddressDictionary[dictionaryKey] = address;
                         }
-                    RecyclingResidentAddressDictionary[dictionaryKey] = address;
+                    
 
                     }
 
@@ -334,6 +327,10 @@ namespace WRM_TrashRecyclePopulation
             bool isAdded = false;
             string status = request.Status.Trim();
             status = translateAddressStatus(status);
+            if (status.Equals("WITHDRAWN"))
+                {
+                return isAdded;
+                }
             Address address = buildResidentAddressFromRequest(request);
             populateAddressFromKGIS(ref address);
 
@@ -344,16 +341,22 @@ namespace WRM_TrashRecyclePopulation
 
                 {
                 int foundAddressId;
-                if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
+                if (AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
                     {
                     resident.AddressID = foundAddressId;
                     ResidentAddressPopulation.ResidentDictionary.Add(dictionaryKey, resident);
+                    WRMLogger.LogBuilder.AppendLine("Resident added at " + dictionaryKey);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(ResidentAddressPopulation.ResidentDictionary[dictionaryKey]);
                     isAdded = true;
                     }
                 else
                     {
                     throw new WRMNullValueException("Address Id is not found for new resident at " + dictionaryKey);
                     }
+                }
+            else
+                {
+                WRMLogger.LogBuilder.AppendLine("Resident already exists at " + dictionaryKey);
                 }
             return isAdded;
             }
@@ -362,6 +365,10 @@ namespace WRM_TrashRecyclePopulation
             bool isUpdated = false;
             string status = request.Status.Trim();
             status = translateAddressStatus(status);
+            if (status.Equals("WITHDRAWN"))
+                {
+                return isUpdated;
+                }
             Address address = buildResidentAddressFromRequest(request);
             populateAddressFromKGIS(ref address);
 
