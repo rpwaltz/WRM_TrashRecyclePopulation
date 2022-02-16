@@ -46,16 +46,18 @@ namespace WRM_TrashRecyclePopulation
             int bulkSaveCount = 0;
             foreach (Address address in addressDictionary.Values)
                 {
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
-                if (bulkSaveCount % 1000 == 0)
+                
+                if ((bulkSaveCount > 0) && (bulkSaveCount % 1000 == 0))
                     {
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                     Program.logLine = "ADDRESS POPULATION: Save Count: " + bulkSaveCount;
                     WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                     WRMLogger.Logger.log();
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                    
 
                     }
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
                 ++bulkSaveCount;
 
                 }
@@ -397,32 +399,41 @@ namespace WRM_TrashRecyclePopulation
             return validated;
 
             }
-
-
-        public int addAddressToWRM_TrashRecycle(Address address)
+        public Address buildResidentAddressFromRequest(dynamic request)
             {
-            int addressId = -1;
-            populateAddressFromKGIS(ref address);
-            
-            if (address != null)
+            Address address = new Address();
+
+            string streetName = request.StreetName;
+            int streetNumber = request.StreetNumber ?? 0;
+            string zipCode = request.ZipCode;
+            string unitNumber = null;
+            if (request.UnitNumber != null)
+                unitNumber = request.UnitNumber;
+            Address foundAddress = new Address();
+            string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(streetName, streetNumber, unitNumber, zipCode);
+
+            if (AddressPopulation.AddressDictionary.TryGetValue(dictionaryKey, out foundAddress))
                 {
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
-                string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
-                AddressPopulation.AddressDictionary[dictionaryKey] = address;
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                address = foundAddress;
 
-                Address addedAddress = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Address.Where(a => a.StreetName == address.StreetName && a.StreetNumber == address.StreetNumber && a.UnitNumber == address.UnitNumber && a.ZipCode == address.ZipCode).ToList().First();
-
-                addressId = addedAddress.AddressID;
-                AddressPopulation.AddressIdentiferDictionary[dictionaryKey] = addressId;
                 }
+
             else
                 {
-                throw new WRMNullValueException("ADDRESS POPULATION: populateAddressFromKGIS: Address is Null");
+                address.StreetName = streetName;
+                address.StreetNumber = streetNumber;
+                address.UnitNumber = unitNumber;
+                address.ZipCode = zipCode;
+                address.CreateDate = request.CreationDate;
+                address.CreateUser = request.CreatedBy;
+                address.UpdateDate = request.LastUpdatedDate;
+                address.UpdateUser = request.LastUpdatedBy;
                 }
-            return addressId;
+
+            return address;
             }
+
+
 
         /* if you recieve a NotSupportedException trying to find an address type, address is assigned null, an error is printed, and processing goes on to the next record */
         public static void populateAddressFromKGIS(ref Address address)

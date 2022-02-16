@@ -16,7 +16,7 @@ namespace WRM_TrashRecyclePopulation
         {
 
         private Dictionary<string, BackDoorPickup> backDoorPickupDictionary = new Dictionary<string, BackDoorPickup>();
-
+    //    Dictionary<string, Address> BackdoorResidentAddressDictionary = new Dictionary<string, Address>();
         public Dictionary<string, BackDoorPickup> BackDoorPickupDictionary { get => backDoorPickupDictionary; set => backDoorPickupDictionary = value; }
             public bool populateBackDoorPickup()
             {
@@ -31,14 +31,6 @@ namespace WRM_TrashRecyclePopulation
 
                 foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdorrRequestList)
                     {
-                    if (numberRequestsSaved % 100 == 0)
-                        {
-                        Program.logLine = "Processed BackDoorPickup Requests: " + numberRequestsSaved;
-                        WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        WRMLogger.Logger.log();
-                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                        }
 
                     try
                         {
@@ -75,66 +67,70 @@ namespace WRM_TrashRecyclePopulation
         
         public void buildAndSaveBackDoorPickupEntitiesFromRequest(BackdoorServiceRequest backdoorRequest)
             {
-            string status = backdoorRequest.Status.Trim();
-            status = translateBackdoorStatus(status);
-            Address address = buildAndAddResidentAddressFromRequest(backdoorRequest);
-            Resident resident = addOrUpdateResidentFromRequestToWRM_TrashRecycle(backdoorRequest);
+            string streetName = backdoorRequest.StreetName;
+            int streetNumber = backdoorRequest.StreetNumber ?? 0;
+            string zipCode = backdoorRequest.ZipCode;
+            string unitNumber = backdoorRequest.UnitNumber;
+            string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(streetName, streetNumber, unitNumber, zipCode);
+            int foundAddressId = 0;
+            if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
+                {
+
+                throw new WRMNullValueException("Unable to find Address : " + dictionaryKey);
+                }
+            addOrUpdateResidentFromRequestToWRM_TrashRecycle(backdoorRequest);
+            int foundResidentId = 0;
+            if (!ResidentAddressPopulation.ResidentIdentiferDictionary.TryGetValue(dictionaryKey, out foundResidentId))
+                {
+                throw new WRMNullValueException("Unable to find Resident : " + dictionaryKey);
+                }
+            BackDoorPickup backdoorPickup = buildRequestBackdoorService(backdoorRequest);
             
-            string backdoorRequestKey = address.AddressID + ":" + resident.ResidentID;
-            string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
+            backdoorPickup.AddressID = foundAddressId;
+            backdoorPickup.ResidentID = foundResidentId;
+            string backdoorRequestKey = foundAddressId + ":" + foundResidentId;
+            
             BackDoorPickup foundBackDoorPickup = new BackDoorPickup();
+
             if (BackDoorPickupDictionary.TryGetValue(backdoorRequestKey, out foundBackDoorPickup))
                 {
+                // if the new backdoor request is newer than the previous one
                 if ((backdoorRequest.LastUpdatedDate ?? Program.posixEpoche) > (foundBackDoorPickup.UpdateDate ?? Program.posixEpoche))
                     {
-                    //backdoor request is more recent than address table, update common address fields
+
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Remove(BackDoorPickupDictionary[dictionaryKey]);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                    }
+                else
+                    {
+
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(backdoorPickup);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                    buildRequestBackdoorService(backdoorRequest, ref foundBackDoorPickup);
-                    backDoorPickupDictionary[backdoorRequestKey] = foundBackDoorPickup;
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(backDoorPickupDictionary[backdoorRequestKey]);
-                    AddressPopulation.AddressDictionary[dictionaryKey].CreateDate = backdoorRequest.CreationDate;
-                    AddressPopulation.AddressDictionary[dictionaryKey].CreateUser = backdoorRequest.CreatedBy;
-                    AddressPopulation.AddressDictionary[dictionaryKey].UpdateDate = backdoorRequest.LastUpdatedDate;
-                    AddressPopulation.AddressDictionary[dictionaryKey].UpdateUser = backdoorRequest.LastUpdatedBy;
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Remove(backdoorPickup);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                     }
-                if (((backdoorRequest.LastUpdatedDate ?? Program.posixEpoche) > address.UpdateDate) &&
-                    !string.IsNullOrEmpty(backdoorRequest.WantsRecyclingCart) &&
-                    (backdoorRequest.WantsRecyclingCart.ToUpper().Equals("YES")))
-                    {
-                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingPickup = true;
-                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingComment = "Modified by ETL " + AddressPopulation.AddressDictionary[dictionaryKey].RecyclingComment;
-                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatusDate = DateTime.Now;
-                    }
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(AddressPopulation.AddressDictionary[dictionaryKey]);
+
                 }
             else
                 {
-                BackDoorPickup backdoorPickup = new BackDoorPickup();
-                buildRequestBackdoorService(backdoorRequest, ref backdoorPickup);
-                backdoorPickup.AddressID = address.AddressID;
-                backdoorPickup.ResidentID = resident.ResidentID;
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(backdoorPickup);
-                if (((backdoorRequest.LastUpdatedDate ?? Program.posixEpoche) > address.UpdateDate) &&
-                        !string.IsNullOrEmpty(backdoorRequest.WantsRecyclingCart) &&
-                        (backdoorRequest.WantsRecyclingCart.ToUpper().Equals("YES")))
-                    {
-                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingPickup = true;
-                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingComment = "Modified by ETL " + AddressPopulation.AddressDictionary[dictionaryKey].RecyclingComment;
-                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatusDate = DateTime.Now;
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(AddressPopulation.AddressDictionary[dictionaryKey]);
-                    }
-                backDoorPickupDictionary.Add(backdoorRequestKey, backdoorPickup);
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                BackDoorPickupDictionary[dictionaryKey] = backdoorPickup;
                 }
-
             }
 
-
-
-
-        public BackDoorPickup buildRequestBackdoorService(BackdoorServiceRequest backdoorServiceRequest, ref BackDoorPickup backdoorPickup)
-            {
             
+
+
+
+
+        public BackDoorPickup buildRequestBackdoorService(BackdoorServiceRequest backdoorServiceRequest)
+            {
+            BackDoorPickup backdoorPickup = new BackDoorPickup();
             backdoorPickup.BackdoorStatus = translateBackdoorStatus(backdoorServiceRequest.Status);
             backdoorPickup.BackdoorStatusDate = backdoorServiceRequest.StatusDate;
 
@@ -186,7 +182,6 @@ namespace WRM_TrashRecyclePopulation
                 }
             return status;
             }
-
 
 
         }

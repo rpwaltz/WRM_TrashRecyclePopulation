@@ -10,11 +10,7 @@ namespace WRM_TrashRecyclePopulation
     public class SNSpreadsheetRow
         {
         Address address = new Address();
-        string streetNumber = "";
-        string streetName = "";
-        string streetNumberStreetName = "";
-        string unit = "";
-        string zipCode = "";
+        int ?rowNumber = null;
         string currentTrashCartDeliveryDate = "";
         string currentTrashCartSN = "";
         string firstTrashCartDeliveryDate = "";
@@ -41,11 +37,6 @@ namespace WRM_TrashRecyclePopulation
         string notes = "";
 
         public Address Address { get => address; set => address = value; }
-        public string StreetNumber { get => streetNumber; set => streetNumber = value; }
-        public string StreetName { get => streetName; set => streetName = value; }
-        public string StreetNumberStreetName { get => streetNumberStreetName; set => streetNumberStreetName = value; }
-        public string Unit { get => unit; set => unit = value; }
-        public string ZipCode { get => zipCode; set => zipCode = value; }
         public string CurrentTrashCartDeliveryDate { get => currentTrashCartDeliveryDate; set => currentTrashCartDeliveryDate = value; }
         public string CurrentTrashCartSN { get => currentTrashCartSN; set => currentTrashCartSN = value; }
         public string FirstTrashCartDeliveryDate { get => firstTrashCartDeliveryDate; set => firstTrashCartDeliveryDate = value; }
@@ -70,6 +61,6 @@ namespace WRM_TrashRecyclePopulation
         public string InvalidKGIS { get => invalidKGIS; set => invalidKGIS = value; }
         public string DuplicateAddress { get => duplicateAddress; set => duplicateAddress = value; }
         public string Notes { get => notes; set => notes = value; }
-
+        public int? RowNumber { get => rowNumber; set => rowNumber = value; }
         }
     }

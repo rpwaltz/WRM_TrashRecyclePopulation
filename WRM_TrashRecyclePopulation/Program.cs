@@ -52,19 +52,19 @@ namespace WRM_TrashRecyclePopulation
                     {
                     AddressPopulation addressPopulation = new AddressPopulation();
                     addressPopulation.populateAddresses();
-                    CartPopulation cartPopulation = new CartPopulation();
-                    cartPopulation.populateCarts();
+//                    CartPopulation cartPopulation = new CartPopulation();
+//                    cartPopulation.populateCarts();
                     SolidWaste solidWasteContext = WRM_EntityFrameworkContextCache.SolidWasteContext;
-/*                    using (solidWasteContext)
+                    using (solidWasteContext)
                         {
                         RecyclingResidentAddressPopulation recyclingAddressCustomerPopulation = new RecyclingResidentAddressPopulation();
 
                         recyclingAddressCustomerPopulation.populateRecyclingResidentAddress();
 
- //                         BackdoorServiceResidentAddressPopulation backdoorServiceResidentAddressPopulation = new BackdoorServiceResidentAddressPopulation();
- //                         backdoorServiceResidentAddressPopulation.populateBackDoorPickup();
+//                          BackdoorServiceResidentAddressPopulation backdoorServiceResidentAddressPopulation = new BackdoorServiceResidentAddressPopulation();
+//                          backdoorServiceResidentAddressPopulation.populateBackDoorPickup();
                         }
-*/
+
 
                     }
                     /*
