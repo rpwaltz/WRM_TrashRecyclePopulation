@@ -29,13 +29,115 @@ namespace WRM_TrashRecyclePopulation
                 int numberRequestsSaved = 0;
                 IEnumerable<BackdoorServiceRequest> orderedSolidWasteBackdorrRequestList = WRM_EntityFrameworkContextCache.SolidWasteContext.BackdoorServiceRequest.OrderBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.StreetName).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.StreetNumber).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.UnitNumber).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.BackdoorId).ToList();
 
+                // Add new Residents
+                numberRequestsSaved = 0;
+                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdorrRequestList)
+                    {
+                    if ((numberRequestsSaved > 0) && (numberRequestsSaved % 1000 == 0))
+                        {
+                        // commit all newly added addresses
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                        Program.logLine = "Added Backdoor Resident Requests: " + numberRequestsSaved;
+                        WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
+
+                        }
+                    try
+                        {
+                        if (buildBackDoorPickupResidentsFromRequest(backdoorRequest))
+                            {
+                            ++numberRequestsSaved;
+                            }
+                        }
+                    catch (Exception ex) when (ex is WRMWithdrawnStatusException || ex is WRMNotSupportedException || ex is WRMNullValueException)
+                        {
+                        WRMLogger.LogBuilder.AppendLine(ex.Message);
+                        }
+
+                    }
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                foreach (Resident resident in WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Resident.ToList())
+                    {
+                    string dictionaryKey = ReverseAddressIdentiferDictionary[resident.AddressID ?? 0];
+                    ResidentAddressPopulation.ResidentIdentiferDictionary[dictionaryKey] = resident.ResidentID;
+                    }
+
+                // Update Existing Residents
+                numberRequestsSaved = 0;
+                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdorrRequestList)
+                    {
+                    if ((numberRequestsSaved > 0) && (numberRequestsSaved % 1000 == 0))
+                        {
+                        // commit all newly added addresses
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                        Program.logLine = "Added Backdoor Resident Requests: " + numberRequestsSaved;
+                        WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
+
+                        }
+                    try
+                        {
+                        if (updateBackDoorPickupResidentsFromRequest(backdoorRequest))
+                            {
+                            ++numberRequestsSaved;
+                            }
+                        }
+                    catch (Exception ex) when (ex is WRMWithdrawnStatusException || ex is WRMNotSupportedException || ex is WRMNullValueException)
+                        {
+                        WRMLogger.LogBuilder.AppendLine(ex.Message);
+                        }
+
+                    }
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+
+                // Add new Backdoor entries
+                numberRequestsSaved = 0;
+                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdorrRequestList)
+                    {
+                    if ((numberRequestsSaved > 0) && (numberRequestsSaved % 1000 == 0))
+                        {
+                        // commit all newly added addresses
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                        Program.logLine = "Added Backdoor Resident Requests: " + numberRequestsSaved;
+                        WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
+
+                        }
+                    try
+                        {
+                        if (buildBackDoorPickupFromRequest(backdoorRequest))
+                            {
+                            ++numberRequestsSaved;
+                            }
+                        }
+                    catch (Exception ex) when (ex is WRMWithdrawnStatusException || ex is WRMNotSupportedException || ex is WRMNullValueException)
+                        {
+                        WRMLogger.LogBuilder.AppendLine(ex.Message);
+                        }
+
+                    }
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+
+                // Delete and Add duplicate entries (keep all entries)
+
+
+
                 foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdorrRequestList)
                     {
 
                     try
                         {
-                        buildAndSaveBackDoorPickupEntitiesFromRequest(backdoorRequest);
-                        ++numberRequestsSaved;
+                        updateBackDoorPickupFromRequest(backdoorRequest);
+
                         }
                     catch (Exception ex) when (ex is WRMWithdrawnStatusException || ex is WRMNotSupportedException || ex is WRMNullValueException)
                         {
@@ -65,8 +167,9 @@ namespace WRM_TrashRecyclePopulation
             }
 
         
-        public void buildAndSaveBackDoorPickupEntitiesFromRequest(BackdoorServiceRequest backdoorRequest)
+        public bool buildBackDoorPickupFromRequest(BackdoorServiceRequest backdoorRequest)
             {
+            bool isAdded = false;
             string streetName = backdoorRequest.StreetName;
             int streetNumber = backdoorRequest.StreetNumber ?? 0;
             string zipCode = backdoorRequest.ZipCode;
@@ -78,7 +181,6 @@ namespace WRM_TrashRecyclePopulation
 
                 throw new WRMNullValueException("Unable to find Address : " + dictionaryKey);
                 }
-            addOrUpdateResidentFromRequestToWRM_TrashRecycle(backdoorRequest);
             int foundResidentId = 0;
             if (!ResidentAddressPopulation.ResidentIdentiferDictionary.TryGetValue(dictionaryKey, out foundResidentId))
                 {
@@ -92,39 +194,62 @@ namespace WRM_TrashRecyclePopulation
             
             BackDoorPickup foundBackDoorPickup = new BackDoorPickup();
 
+            if (!BackDoorPickupDictionary.TryGetValue(backdoorRequestKey, out foundBackDoorPickup))
+                {
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(backdoorPickup);
+                
+                BackDoorPickupDictionary[backdoorRequestKey] = backdoorPickup;
+                isAdded = true;
+                }
+            return isAdded;
+            }
+
+
+        public void updateBackDoorPickupFromRequest(BackdoorServiceRequest backdoorRequest)
+            {
+            string streetName = backdoorRequest.StreetName;
+            int streetNumber = backdoorRequest.StreetNumber ?? 0;
+            string zipCode = backdoorRequest.ZipCode;
+            string unitNumber = backdoorRequest.UnitNumber;
+            string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(streetName, streetNumber, unitNumber, zipCode);
+            int foundAddressId = 0;
+            if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
+                {
+
+                throw new WRMNullValueException("Unable to find Address : " + dictionaryKey);
+                }
+            int foundResidentId = 0;
+            if (!ResidentAddressPopulation.ResidentIdentiferDictionary.TryGetValue(dictionaryKey, out foundResidentId))
+                {
+                throw new WRMNullValueException("Unable to find Resident : " + dictionaryKey);
+                }
+            BackDoorPickup backdoorPickup = buildRequestBackdoorService(backdoorRequest);
+
+            backdoorPickup.AddressID = foundAddressId;
+            backdoorPickup.ResidentID = foundResidentId;
+            string backdoorRequestKey = foundAddressId + ":" + foundResidentId;
+
+            BackDoorPickup foundBackDoorPickup = new BackDoorPickup();
+
             if (BackDoorPickupDictionary.TryGetValue(backdoorRequestKey, out foundBackDoorPickup))
                 {
                 // if the new backdoor request is newer than the previous one
-                if ((backdoorRequest.LastUpdatedDate ?? Program.posixEpoche) > (foundBackDoorPickup.UpdateDate ?? Program.posixEpoche))
+                if ( ((backdoorPickup.UpdateDate ?? Program.posixEpoche) > (foundBackDoorPickup.UpdateDate ?? Program.posixEpoche) )
+                    || (((backdoorPickup.UpdateDate ?? DateTime.Now) == (foundBackDoorPickup.UpdateDate ?? Program.posixEpoche)) &&
+                    ((backdoorPickup.CreateDate ?? DateTime.Now) > (foundBackDoorPickup.CreateDate ?? Program.posixEpoche))) )
                     {
-
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Remove(BackDoorPickupDictionary[dictionaryKey]);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                    
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Remove(BackDoorPickupDictionary[backdoorRequestKey]);
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                    }
-                else
-                    {
-
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(backdoorPickup);
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Remove(backdoorPickup);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                    BackDoorPickupDictionary[backdoorRequestKey] = backdoorPickup;
                     }
-
-                }
-            else
-                {
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(backdoorPickup);
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                BackDoorPickupDictionary[dictionaryKey] = backdoorPickup;
                 }
             }
-
-            
-
 
 
 
@@ -182,8 +307,92 @@ namespace WRM_TrashRecyclePopulation
                 }
             return status;
             }
+        public bool buildBackDoorPickupResidentsFromRequest(dynamic request)
+            {
+            bool isAdded = false;
+            string streetName = request.StreetName;
+            int streetNumber = request.StreetNumber ?? 0;
+            string zipCode = request.ZipCode;
+            string unitNumber = null;
+            if (request.UnitNumber != null)
+                unitNumber = request.UnitNumber;
 
+            Resident foundResident = new Resident();
 
+            string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(streetName, streetNumber, unitNumber, zipCode);
+            int addressId = 0;
+            if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out addressId))
+                {
+                throw new WRMNullValueException("Address is not found for " + dictionaryKey);
+                }
+
+            if (!ResidentAddressPopulation.ResidentDictionary.TryGetValue(dictionaryKey, out foundResident))
+                {
+
+                Resident resident = buildResidentFromRequest(request);
+                resident.AddressID = addressId;
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(resident);
+
+                ResidentAddressPopulation.ResidentDictionary[dictionaryKey] = resident;
+                isAdded = true;
+                }
+            return isAdded;
+            }
+        public bool updateBackDoorPickupResidentsFromRequest(dynamic request)
+            {
+            bool isAdded = false;
+            string streetName = request.StreetName;
+            int streetNumber = request.StreetNumber ?? 0;
+            string zipCode = request.ZipCode;
+            string unitNumber = null;
+            if (request.UnitNumber != null)
+                unitNumber = request.UnitNumber;
+
+            Resident foundResident = new Resident();
+
+            string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(streetName, streetNumber, unitNumber, zipCode);
+            int addressId = 0;
+            if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out addressId))
+                {
+                throw new WRMNullValueException("Address is not found for " + dictionaryKey);
+                }
+
+            if (ResidentAddressPopulation.ResidentDictionary.TryGetValue(dictionaryKey, out foundResident))
+                {
+                List<Resident> existingResidentList = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Resident.Where(a => a.AddressID == addressId).ToList();
+                if (existingResidentList.Count == 0)
+                    {
+                    throw new WRMNullValueException("Resident exists in ResidentDictionary but is not found in Database " + foundResident.LastName + " " + dictionaryKey);
+                    }
+                //Resident existingResident = existingResidentList.First();
+                Resident resident = buildResidentFromRequest(request);
+                foreach (Resident existingResident in existingResidentList)
+                    {
+                    // compare dates, if request date is later than resident dates, update
+
+                    if (((resident.UpdateDate ?? Program.posixEpoche) > (existingResident.UpdateDate ?? Program.posixEpoche))
+                        || (((resident.UpdateDate ?? DateTime.Now) == (existingResident.UpdateDate ?? Program.posixEpoche)) &&
+                        ((resident.CreateDate ?? DateTime.Now) > (existingResident.CreateDate ?? Program.posixEpoche))))
+                        {
+                        
+                        existingResident.Email = resident.Email;
+                        existingResident.FirstName = resident.FirstName;
+                        existingResident.LastName = resident.LastName;
+
+                        existingResident.Phone = resident.Phone;
+
+                        existingResident.CreateDate = resident.CreateDate;
+                        existingResident.CreateUser = resident.CreateUser;
+                        existingResident.UpdateDate = resident.UpdateDate;
+                        existingResident.UpdateUser = resident.UpdateUser;
+                        existingResident.SendEmailNewsletter = resident.SendEmailNewsletter;
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(existingResident);
+                        isAdded = true;
+                        }
+                    }
+                }
+            return isAdded;
+            }
         }
 
     }

@@ -26,10 +26,6 @@ namespace WRM_TrashRecyclePopulation
                 int numberRequestsSaved = 0;
                 IEnumerable<RecyclingRequest> orderedSolidWasteRecyclingRequestList = WRM_EntityFrameworkContextCache.SolidWasteContext.RecyclingRequest.OrderBy(solidWasteRecyclingRequestList => solidWasteRecyclingRequestList.StreetName).ThenBy(solidWasteRecyclingRequestList => solidWasteRecyclingRequestList.StreetNumber).ThenBy(solidWasteRecyclingRequestList => solidWasteRecyclingRequestList.UnitNumber).ThenBy(solidWasteRecyclingRequestList => solidWasteRecyclingRequestList.Id).ToList();
 
-
-
-
-
                 // Add all Residents
 
                 // UPdate all old addresses
@@ -205,7 +201,7 @@ namespace WRM_TrashRecyclePopulation
                 Program.logLine = "Updated Added new Residents " + numberRequestsSaved;
                 WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 WRMLogger.Logger.log();
-                
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
 
                 foreach (Resident resident in WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Resident.ToList())
                     {
@@ -258,7 +254,7 @@ namespace WRM_TrashRecyclePopulation
                 else
                     {
                     AddressPopulation.AddressDictionary[dictionaryKey].RecyclingPickup = false;
-                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatus = null;
+                    AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatus = "WITHDRAWN";
                     }
                 isAdded = false;
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(AddressPopulation.AddressDictionary[dictionaryKey]);
@@ -296,9 +292,14 @@ namespace WRM_TrashRecyclePopulation
 
             string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
             Address foundAddress = new Address();
+
+           /* THIS LOGIC IS PROBABLY WRONG */
            if (RecyclingResidentAddressDictionary.TryGetValue(dictionaryKey, out foundAddress))
                 {
-                if ((request.LastUpdatedDate ?? Program.posixEpoche) > (foundAddress.UpdateDate ?? Program.posixEpoche))
+                if (((address.UpdateDate ?? Program.posixEpoche) > (foundAddress.UpdateDate ?? Program.posixEpoche)) ||
+                    (((address.UpdateDate ?? DateTime.Now) == (foundAddress.UpdateDate ?? Program.posixEpoche))
+                        && ((address.CreateDate ?? DateTime.Now) > (foundAddress.CreateDate ?? Program.posixEpoche))))
+                    if ((request.LastUpdatedDate ?? Program.posixEpoche) > (foundAddress.UpdateDate ?? Program.posixEpoche))
                     {
                     RecyclingResidentAddressDictionary[dictionaryKey].CreateDate = request.CreationDate;
                     RecyclingResidentAddressDictionary[dictionaryKey].CreateUser = request.CreatedBy;
@@ -306,6 +307,7 @@ namespace WRM_TrashRecyclePopulation
                     RecyclingResidentAddressDictionary[dictionaryKey].UpdateUser = request.LastUpdatedBy;
                     if (!status.Equals("WITHDRAWN"))
                         {
+                        
                         RecyclingResidentAddressDictionary[dictionaryKey].RecyclingStatus = status;
                         RecyclingResidentAddressDictionary[dictionaryKey].RecyclingPickup = status.Equals("APPROVED");
                         RecyclingResidentAddressDictionary[dictionaryKey].RecyclingStatusDate = request.StatusDate;
@@ -313,7 +315,7 @@ namespace WRM_TrashRecyclePopulation
                     else
                         {
                         RecyclingResidentAddressDictionary[dictionaryKey].RecyclingPickup = false;
-                        RecyclingResidentAddressDictionary[dictionaryKey].RecyclingStatus = null;
+                        RecyclingResidentAddressDictionary[dictionaryKey].RecyclingStatus = "WITHDRAWN";
 
                         }
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(RecyclingResidentAddressDictionary[dictionaryKey]);
@@ -377,7 +379,9 @@ namespace WRM_TrashRecyclePopulation
             Resident foundResident = new Resident();
             if (ResidentAddressPopulation.ResidentDictionary.TryGetValue(dictionaryKey, out foundResident))
                 {
-                if ((resident.UpdateDate ?? Program.posixEpoche) > (foundResident.UpdateDate ?? Program.posixEpoche))
+                if (((resident.UpdateDate ?? Program.posixEpoche) > (foundResident.UpdateDate ?? Program.posixEpoche)) ||
+                     (((resident.UpdateDate ?? DateTime.Now) == (foundResident.UpdateDate ?? Program.posixEpoche))
+                        && ((resident.CreateDate ?? DateTime.Now) > (foundResident.CreateDate ?? Program.posixEpoche))))
                     {
                     ResidentAddressPopulation.ResidentDictionary[dictionaryKey].FirstName = resident.FirstName;
                     ResidentAddressPopulation.ResidentDictionary[dictionaryKey].LastName = resident.LastName;

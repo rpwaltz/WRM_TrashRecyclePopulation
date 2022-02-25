@@ -33,7 +33,7 @@ namespace WRM_TrashRecyclePopulation
                 serviceTrashDayImporter = new ServiceTrashDayImporter();
 
                 }
-
+            
             }
         public void populateAddresses()
             {
@@ -43,6 +43,7 @@ namespace WRM_TrashRecyclePopulation
 
             addTrashServiceAddressesFromWorksheetIntoDictionary(serviceTrashDayImporter.TrashServiceDayWorksheet);
             addRecycleServiceAddressesFromWorksheetIntoDictionary(serviceTrashDayImporter.RecycleServiceDayWorksheet);
+            
             int bulkSaveCount = 0;
             foreach (Address address in addressDictionary.Values)
                 {
@@ -61,7 +62,10 @@ namespace WRM_TrashRecyclePopulation
                 ++bulkSaveCount;
 
                 }
-
+            serviceTrashDayImporter.Save();
+            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
             Program.logLine = "ADDRESS POPULATION: Total Address Count: " + bulkSaveCount;
             WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
             WRMLogger.Logger.log();
@@ -81,7 +85,8 @@ namespace WRM_TrashRecyclePopulation
             int rowCount = worksheet.Dimension.End.Row;     //get row count
                                                             //    Program.logLine = "ADDRESS POPULATION: TrashAddress Count: " + rowCount;
                                                             //    WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                                                            //    WRMLogger.Logger.log();
+                                                            //    WRMLogger.Logger.log();populateAddressFromKGIS
+            
             for (int row = 2; row <= rowCount; row++)
                 {
                 Address address = null;
@@ -89,17 +94,43 @@ namespace WRM_TrashRecyclePopulation
                 try
                     {
                     address = serviceTrashDayImporter.createAddressFromServiceDayWorksheet(worksheet, row);
-                    populateAddressFromKGIS(ref address);
+                    if (populateAddressFromKGIS(ref address))
+                        {
+                        serviceTrashDayImporter.TrashServiceDayWorksheet.Cells[row, 8].Value = "True";
+                        try
+                            {
+                            AddressPopulation.translateAddressTypeFromKGISAddressUse(address.GISAddressUseType);
+                            }
+                        catch (WRMNotSupportedException ex)
+                            {
+                            serviceTrashDayImporter.TrashServiceDayWorksheet.Cells[row, 9].Value = ex.Message;
+                            }
+                        }
+                    else
+                        {
+                        serviceTrashDayImporter.TrashServiceDayWorksheet.Cells[row, 8].Value = "False";
+                        }
                     dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
+                    // create a warning if the KGIS address type is not translatable
+
                     }
                 catch (WRMNotSupportedException ex)
                     {
                     WRMLogger.LogBuilder.AppendLine("TRASH ADDRESS POPULATION ERROR: At row " + row + " " + ex.Message);
+                    serviceTrashDayImporter.TrashServiceDayWorksheet.Cells[row, 8].Value = "True";
+                    serviceTrashDayImporter.TrashServiceDayWorksheet.Cells[row, 9].Value = ex.Message + " :TRASH ADDRESS: at row " + row; ;
                     continue;
                     }
+                catch (WRMIgnoreRowException ex)
+                    {
+                    continue;
+                    }
+
                 catch (WRMNullValueException ex)
                     {
-                    WRMLogger.LogBuilder.AppendLine("TRASH ADDRESS POPULATION ERROR: At row " + row + " " + ex.Message);
+                    serviceTrashDayImporter.TrashServiceDayWorksheet.Cells[row, 8].Value = "False";
+                    WRMLogger.LogBuilder.AppendLine("TRASH ADDRESS Null Value: At row " + row + " " + ex.Message);
+                    serviceTrashDayImporter.TrashServiceDayWorksheet.Cells[row, 9].Value = ex.Message + " :TRASH ADDRESS: at row " + row;
                     continue;
                     }
                 try
@@ -116,26 +147,28 @@ namespace WRM_TrashRecyclePopulation
                         ExcelRange trashSchedule = worksheet.Cells[row, 5];
                         if (trashSchedule != null && trashSchedule.Value != null)
                             {
-                            if (validateDayOfWeek(trashSchedule.Value.ToString()))
+                            if (validateDayOfWeek(trashSchedule.Value.ToString().Trim()))
                                 {
                                 address.TrashPickup = true;
-                                address.TrashDayOfWeek = trashSchedule.Value.ToString().ToUpper();
+                                address.TrashDayOfWeek = trashSchedule.Value.ToString().ToUpper().Trim();
                                 }
                             else
                                 {
                                 address.TrashPickup = false;
-                                throw new WRMNotSupportedException("TRASH ADDRESS POPULATION: Invalid TrashSchedule day of Week");
+                                throw new WRMNotSupportedException("Invalid TrashSchedule day of Week " + trashSchedule.Value.ToString());
                                 }
                             }
                         else
                             {
                             address.TrashPickup = false;
-                            WRMLogger.LogBuilder.AppendLine("WARNING: At row " + row + " TRASH ADDRESS POPULATION: Service Date Trash Service not found " + dictionaryKey);
+                            serviceTrashDayImporter.TrashServiceDayWorksheet.Cells[row, 9].Value = "Service Date Trash Service not found";
+                            WRMLogger.LogBuilder.AppendLine("WARNING: At row " + row + " Service Date Trash Service not found " + dictionaryKey);
                             }
                         
                         if (address == null)
                             {
-                            throw new WRMNullValueException("TRASH ADDRESS POPULATION: Address is null");
+
+                            throw new WRMNullValueException("Trash Address is null at row " + row);
                             }
                         else
                             {
@@ -144,13 +177,14 @@ namespace WRM_TrashRecyclePopulation
                         }
                     else
                         {
-                        throw new WRMNotSupportedException("TRASH ADDRESS POPULATION: In Trash Service Invalid status for KGIS Address " + dictionaryKey);
+                        throw new WRMNotSupportedException("Zhas Duplicate Address? at row " + row + " " + dictionaryKey);
                         }
 
 
                     }
                 catch (WRMNullValueException ex)
                     {
+                    serviceTrashDayImporter.TrashServiceDayWorksheet.Cells[row, 9].Value = ex.Message + " :TRASH ADDRESS: at row " + row; ;
                     WRMLogger.LogBuilder.AppendLine("ERROR: At row " + row + " " + ex.Message + " " + dictionaryKey);
                     /*
                     WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
@@ -165,6 +199,7 @@ namespace WRM_TrashRecyclePopulation
                     }
                 catch (WRMNotSupportedException ex)
                     {
+                    serviceTrashDayImporter.TrashServiceDayWorksheet.Cells[row, 9].Value = ex.Message + " :TRASH ADDRESS: at row " + row; ;
                     WRMLogger.LogBuilder.AppendLine("ERROR: At row " + row + " " + ex.Message + " " + dictionaryKey);
                     /*
                     WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
@@ -176,6 +211,11 @@ namespace WRM_TrashRecyclePopulation
                         WRMLogger.LogBuilder.AppendLine(inner.StackTrace);
                         }
                     */
+                    }
+                catch (Exception ex)
+                    {
+                    serviceTrashDayImporter.TrashServiceDayWorksheet.Cells[row, 9].Value = ex.Message;
+                    throw ex;
                     }
                 }
             }
@@ -191,17 +231,40 @@ namespace WRM_TrashRecyclePopulation
                 try
                     {
                     address = serviceTrashDayImporter.createAddressFromServiceDayWorksheet(worksheet, row);
-                    populateAddressFromKGIS(ref address);
+                    if (populateAddressFromKGIS(ref address))
+                        {
+                        serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 9].Value = "True";
+                        try
+                            {
+                            AddressPopulation.translateAddressTypeFromKGISAddressUse(address.GISAddressUseType);
+                            }
+                        catch (WRMNotSupportedException ex)
+                            {
+                            serviceTrashDayImporter.TrashServiceDayWorksheet.Cells[row, 10].Value = ex.Message;
+                            }
+                        }
+                    else
+                        {
+                        serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 9].Value = "False";
+                        }
                     dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
                     }
                 catch (WRMNotSupportedException ex)
                     {
-                    WRMLogger.LogBuilder.AppendLine("ERROR: At row " + row + " RECYCLING ADDRESS POPULATION " + ex.Message);
+                    serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 9].Value = "True";
+                    serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 10].Value = ex.Message + " :RECYCLE ADDRESS: at row " + row; 
+                    WRMLogger.LogBuilder.AppendLine("ERROR: At row " + row + " " + ex.Message);
                     continue;
                     }
                 catch (WRMNullValueException ex)
                     {
-                    WRMLogger.LogBuilder.AppendLine("ERROR: At row " + row + " RECYCLING ADDRESS POPULATION " + ex.Message);
+                    serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 9].Value = "False";
+                    serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 10].Value = ex.Message + " :RECYCLE ADDRESS: at row " + row;
+                    WRMLogger.LogBuilder.AppendLine("ERROR: At row " + row + "  " + ex.Message);
+                    continue;
+                    }
+                catch (WRMIgnoreRowException ex)
+                    {
                     continue;
                     }
                 try
@@ -225,20 +288,23 @@ namespace WRM_TrashRecyclePopulation
                                     }
                                 else
                                     {
-                                    throw new WRMNotSupportedException("RECYCLING ADDRESS POPULATION: Invalid Recycling Frequency");
+                                    serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 10].Value = "Invalid Recycling Frequency";
+                                    throw new WRMNotSupportedException("Invalid Recycling Frequency");
                                     }
 
                                 }
                             else
                                 {
-                                throw new WRMNotSupportedException("RECYCLING ADDRESS POPULATION: Invalid TrashSchedule day of Week " + recycleSchedule.Value.ToString());
+                                serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 10].Value = "Invalid Recycling Day of Week " + recycleSchedule.Value.ToString();
+                                throw new WRMNotSupportedException("Invalid Recycling Schedule Day of Week " + recycleSchedule.Value.ToString());
 
                                 }
                             }
                         else
                             {
                             AddressDictionary[dictionaryKey].RecyclingPickup = false;
-                            WRMLogger.LogBuilder.AppendLine("ERROR: RECYCLING ADDRESS POPULATION: Entry in Recycling without a Recyling day " + dictionaryKey);
+                            serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 10].Value = "Entry in Recycling without a Recyling day ";
+                            WRMLogger.LogBuilder.AppendLine("Entry in Recycling without a Recyling day " + dictionaryKey);
                             }
 
                         }
@@ -247,7 +313,8 @@ namespace WRM_TrashRecyclePopulation
 
                         if (address == null)
                             {
-                            throw new WRMNullValueException("RECYCLING ADDRESS POPULATION: Address is null");
+                            serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 10].Value = "Address is null";
+                            throw new WRMNullValueException("Recycling Address is null");
                             }
                         else
                             {
@@ -255,7 +322,8 @@ namespace WRM_TrashRecyclePopulation
                                 {
                                 if (!validateDayOfWeek(recycleSchedule.Value.ToString()))
                                     {
-                                    throw new WRMNotSupportedException("RECYCLING ADDRESS POPULATION: Recycle Day of Week is not valid " + recycleSchedule.Value.ToString());
+                                    serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 10].Value = "Recycle Day of Week is not valid " + recycleSchedule.Value.ToString();
+                                    throw new WRMNotSupportedException("Recycle Day of Week is not valid " + recycleSchedule.Value.ToString());
                                     }
                                 else
                                     {
@@ -267,14 +335,16 @@ namespace WRM_TrashRecyclePopulation
                                         }
                                     else
                                         {
-                                        throw new WRMNotSupportedException("RECYCLING ADDRESS POPULATION: Invalid RecycleFrequency");
+                                        serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 10].Value = "Invalid RecycleFrequency";
+                                        throw new WRMNotSupportedException("Invalid RecycleFrequency");
                                         }
                                     }
                                 }
                             else
                                 {
                                 address.RecyclingPickup = false;
-                                WRMLogger.LogBuilder.AppendLine("ERROR: At row " + row + " RECYCLING ADDRESS POPULATION: Entry in Recycling without a Recyling day " + dictionaryKey);
+                                serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 10].Value = "Entry in Recycling without a Recyling day";
+                                WRMLogger.LogBuilder.AppendLine("ERROR: At row " + row + " Entry in Recycling without a Recyling day " + dictionaryKey);
                                 }
                             AddressDictionary.Add(dictionaryKey, address);
                             }
@@ -285,6 +355,7 @@ namespace WRM_TrashRecyclePopulation
                     }
                 catch (WRMNullValueException ex)
                     {
+                    serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 10].Value = ex.Message + " :RECYCLE ADDRESS: at row " + row;
                     WRMLogger.LogBuilder.AppendLine("ERROR: At row " + row + " " + ex.Message + " " + dictionaryKey);
                     /*
                     WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
@@ -299,6 +370,7 @@ namespace WRM_TrashRecyclePopulation
                     }
                 catch (WRMNotSupportedException ex)
                     {
+                    serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 10].Value = ex.Message + " :RECYCLE ADDRESS: at row " + row;
                     WRMLogger.LogBuilder.AppendLine("ERROR: At row " + row + " " + ex.Message + " " + dictionaryKey);
                     /*
                     WRMLogger.LogBuilder.AppendLine(ex.StackTrace);
@@ -313,16 +385,17 @@ namespace WRM_TrashRecyclePopulation
                     }
                 catch (Exception ex)
                     {
+                    serviceTrashDayImporter.RecycleServiceDayWorksheet.Cells[row, 10].Value = ex.Message + " :RECYCLE ADDRESS: at row " + row;
                     throw ex;
                     }
                 }
             }
 
 
-        public static string translateAddressTypeFromKGISAddressUse(KGISAddress kgisCityResidentAddress)
+        public static string translateAddressTypeFromKGISAddressUse(string ADDRESS_USE_TYPE)
             {
             string addressType = null;
-            switch (kgisCityResidentAddress.ADDRESS_USE_TYPE)
+            switch (ADDRESS_USE_TYPE)
                 {
                 case "DWELLING, MULTI-FAMILY":
                 case "ACCESSORY DWELLING UNIT":
@@ -357,11 +430,11 @@ namespace WRM_TrashRecyclePopulation
                     break;
 
                 default:
-                    throw new WRMNotSupportedException("ADDRESS POPULATION: Invalid Property Type " + kgisCityResidentAddress.ADDRESS_USE_TYPE);
+                    throw new WRMNotSupportedException("Invalid KGIS Property Type " + ADDRESS_USE_TYPE);
                 }
             if (String.IsNullOrEmpty(addressType))
                 {
-                throw new WRMNotSupportedException("ADDRESS POPULATION: Property Type may not be null ");
+                throw new WRMNotSupportedException("KGIS Property Type may not be null ");
                 }
             return addressType;
             }
@@ -436,11 +509,12 @@ namespace WRM_TrashRecyclePopulation
 
 
         /* if you recieve a NotSupportedException trying to find an address type, address is assigned null, an error is printed, and processing goes on to the next record */
-        public static void populateAddressFromKGIS(ref Address address)
+        public static bool populateAddressFromKGIS(ref Address address)
             {
+            bool isValid = false;
             if (address == null || String.IsNullOrEmpty(address.StreetName))
                 {
-                throw new WRMNullValueException("ADDRESS POPULATION: populateAddressFromKGIS: Address or Street is Null");
+                throw new WRMNullValueException("PopulateAddressFromKGIS: Address or Street is Null");
                 }
             string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
             //KgisCityResidentAddressList
@@ -451,63 +525,45 @@ namespace WRM_TrashRecyclePopulation
                 {
                 if (Decimal.ToInt32(kgisAddress.JURISDICTION ?? 0) == 1 && Decimal.ToInt32(kgisAddress.ADDRESS_STATUS ?? 0) == 2)
                     {
-                    try
-                        {
 
+                        address.GISAddressUseType = kgisAddress.ADDRESS_USE_TYPE;
                         address.GISParcelID = kgisAddress.PARCELID;
-
-
-
                         try
                             {
-                            address.AddressType = AddressPopulation.translateAddressTypeFromKGISAddressUse(kgisAddress);
+                            address.AddressType = AddressPopulation.translateAddressTypeFromKGISAddressUse(kgisAddress.ADDRESS_USE_TYPE);
                             }
                         catch (Exception ex)
                             {
                             address.AddressType = "RESIDENTIAL";
                             }
 
-
                         address.GISLatitude = kgisAddress.LATITUDE;
                         address.GISLongitude = kgisAddress.LONGITUDE;
                         address.GISPointX = kgisAddress.POINT_X;
                         address.GISPointY = kgisAddress.POINT_Y;
-                        }
-                    catch (WRMNotSupportedException nex)
-                        {
-                        WRMLogger.LogBuilder.AppendLine(nex.Message);
-                        WRMLogger.LogBuilder.AppendLine(nex.ToString());
-                        Exception inner = nex.InnerException;
-                        if (inner != null)
-                            {
-                            WRMLogger.LogBuilder.AppendLine(inner.Message);
-                            WRMLogger.LogBuilder.AppendLine(inner.ToString());
-                            }
-                        throw new WRMNotSupportedException("ADDRESS POPULATION: populateAddressFromKGIS: Address Type not supported " + address.AddressType);
-                        }
                     }
                 else
                     {
                     if (Decimal.ToInt32(kgisAddress.JURISDICTION ?? 0) != 1)
                         {
-                        throw new WRMNotSupportedException("ADDRESS POPULATION: Out of Jurisdiction FOR ADDRESS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "]! \n");
+                        throw new WRMNotSupportedException("KGIS Out of Jurisdiction " + kgisAddress.JURISDICTION  + " FOR ADDRESS [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "]! \n");
                         }
                     else if (Decimal.ToInt32(kgisAddress.ADDRESS_STATUS ?? 0) != 2)
                         {
 
-                        throw new WRMNotSupportedException("ADDRESS POPULATION: Invalid KGIS Address Status [" + address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "]!");
+                        throw new WRMNotSupportedException("Invalid KGIS Address Status " + kgisAddress.ADDRESS_STATUS + "["+ address.StreetNumber + "] [" + address.StreetName + "] [" + address.UnitNumber + "] [" + address.ZipCode + "]!");
                         }
                     }
                 // request.FirstName; request.LastName, request.PhoneNumber; request.Email;
-
+                isValid = true;
 
                 }
             else
                 {
                 address.AddressType = "RESIDENTIAL";
-                WRMLogger.LogBuilder.AppendLine("ADDRESS POPULATION: WARNING:  ADDRESS IS NOT FOUND IN KGIS. [" + address.StreetNumber + "][" + address.StreetName + "][" + address.UnitNumber + "][" + address.ZipCode + "] does not exist!");
+                WRMLogger.LogBuilder.AppendLine("ADDRESS IS NOT FOUND IN KGIS. [" + address.StreetNumber + "][" + address.StreetName + "][" + address.UnitNumber + "][" + address.ZipCode + "] does not exist!");
                 }
-
+            return isValid;
             }
         }
     }

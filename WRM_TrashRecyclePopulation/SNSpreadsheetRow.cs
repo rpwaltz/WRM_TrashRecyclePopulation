@@ -10,7 +10,7 @@ namespace WRM_TrashRecyclePopulation
     public class SNSpreadsheetRow
         {
         Address address = new Address();
-        int ?rowNumber = null;
+        int rowNumber = -1;
         string currentTrashCartDeliveryDate = "";
         string currentTrashCartSN = "";
         string firstTrashCartDeliveryDate = "";
@@ -19,12 +19,16 @@ namespace WRM_TrashRecyclePopulation
         string secondTrashCartSN = "";
         string thirdTrashCartDeliveryDate = "";
         string thirdTrashCartSN = "";
+        string fourthTrashCartDeliveryDate = "";
+        string fourthTrashCartSN = "";
         string currentRecycleCartDeliveryDate = "";
         string currentRecycleCartSN = "";
         string firstRecycleCartDeliveryDate = "";
         string firstRecycleCartSN = "";
         string secondRecycleCartDeliveryDate = "";
         string secondRecycleCartSN = "";
+        string thirdRecycleCartDeliveryDate = "";
+        string thirdRecycleCartSN = "";
         string multiFamilyUnit = "";
         string commercialAccount = "";
         string smallTrashCart = "";
@@ -32,7 +36,6 @@ namespace WRM_TrashRecyclePopulation
         string addressPreviouslyDemolished = "";
         string disapproved = "";
         string noCartHere = "";
-        string invalidKGIS = "";
         string duplicateAddress = "";
         string notes = "";
 
@@ -58,9 +61,12 @@ namespace WRM_TrashRecyclePopulation
         public string AddressPreviouslyDemolished { get => addressPreviouslyDemolished; set => addressPreviouslyDemolished = value; }
         public string Disapproved { get => disapproved; set => disapproved = value; }
         public string NoCartHere { get => noCartHere; set => noCartHere = value; }
-        public string InvalidKGIS { get => invalidKGIS; set => invalidKGIS = value; }
         public string DuplicateAddress { get => duplicateAddress; set => duplicateAddress = value; }
         public string Notes { get => notes; set => notes = value; }
-        public int? RowNumber { get => rowNumber; set => rowNumber = value; }
+        public int RowNumber { get => rowNumber; set => rowNumber = value; }
+        public string FourthTrashCartDeliveryDate { get => fourthTrashCartDeliveryDate; set => fourthTrashCartDeliveryDate = value; }
+        public string FourthTrashCartSN { get => fourthTrashCartSN; set => fourthTrashCartSN = value; }
+        public string ThirdRecycleCartDeliveryDate { get => thirdRecycleCartDeliveryDate; set => thirdRecycleCartDeliveryDate = value; }
+        public string ThirdRecycleCartSN { get => thirdRecycleCartSN; set => thirdRecycleCartSN = value; }
         }
     }

@@ -46,7 +46,7 @@ namespace WRM_TrashRecyclePopulation
             {
             if (string.IsNullOrEmpty(target))
                 {
-                throw new WRMNullValueException("Street Name is Null");
+                throw new WRMNullValueException("Street Name is Empty");
                 }
             target = target.Trim();
             target = target.ToUpper();
@@ -112,7 +112,7 @@ namespace WRM_TrashRecyclePopulation
             public static int normalizeStreetNumber(string streetNumberString)
         {
             if (String.IsNullOrEmpty(streetNumberString))
-                return 0;
+                throw new WRMNullValueException("Street Number is Empty");
             int streetNumber;
             if (int.TryParse(streetNumberString, out streetNumber) )
                 {
@@ -120,9 +120,8 @@ namespace WRM_TrashRecyclePopulation
                 }
             else
                 {
-                streetNumber = 0;
+                throw new WRMNullValueException("Street Number is Malformed " + streetNumberString);
                 }
-            return streetNumber;
 
             }
         public static string normalizeUnitNumber(string target)
@@ -140,7 +139,7 @@ namespace WRM_TrashRecyclePopulation
         {
             if (string.IsNullOrEmpty(target))
                 {
-                throw new WRMNullValueException("Zip Code is Null");
+                throw new WRMNullValueException("Zip Code is Empty");
                 }
             target = target.Trim();
             target = target.ToUpper();
