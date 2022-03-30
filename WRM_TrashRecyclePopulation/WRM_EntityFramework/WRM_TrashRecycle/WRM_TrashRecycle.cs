@@ -28,10 +28,8 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.ApplyConfiguration(new Configurations.AddressConfiguration());
             modelBuilder.ApplyConfiguration(new Configurations.BackDoorPickupConfiguration());
             modelBuilder.ApplyConfiguration(new Configurations.CartConfiguration());
-            modelBuilder.ApplyConfiguration(new Configurations.KGISAddressConfiguration());
             modelBuilder.ApplyConfiguration(new Configurations.ResidentConfiguration());
 
             OnModelCreatingPartial(modelBuilder);

@@ -12,8 +12,12 @@ namespace WRM_TrashRecyclePopulation
     {
     class WRM_EntityFrameworkContextCache
         {
-        private static WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle wrmTrashRecycleContext = null;
+        public static WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle wrmTrashRecycleContext = null;
 
+        public static void executeSql(string sql)
+            {
+            WRM_EntityFrameworkContextCache.wrmTrashRecycleContext.Database.ExecuteSqlRaw(sql);
+            }
         public static WRM_TrashRecycle WrmTrashRecycleContext
             {
             get

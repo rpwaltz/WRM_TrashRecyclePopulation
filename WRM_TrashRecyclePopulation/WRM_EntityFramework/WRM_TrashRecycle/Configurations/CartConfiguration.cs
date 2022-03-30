@@ -13,10 +13,12 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
     {
         public void Configure(EntityTypeBuilder<Cart> entity)
         {
+            entity.Property(e => e.CompositeCartKey).HasComputedColumnSql("(concat([CartSerialNumber],[AddressID],[IsRecyclingCart]))", false);
+
             entity.HasOne(d => d.Address)
                 .WithMany(p => p.Cart)
                 .HasForeignKey(d => d.AddressID)
-                .HasConstraintName("FK_Cart_AddressID");
+                .HasConstraintName("FK__Cart__AddressID__247D636F");
 
             OnConfigurePartial(entity);
         }

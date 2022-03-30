@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
 {
+    [Index(nameof(CompositeCartKey), Name = "UK_CompositeCartKey", IsUnique = true)]
     public partial class Cart
     {
         [Key]
@@ -17,6 +18,10 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         [StringLength(256)]
         [Unicode(false)]
         public string CartSerialNumber { get; set; }
+        [Required]
+        [StringLength(269)]
+        [Unicode(false)]
+        public string CompositeCartKey { get; set; }
         [StringLength(10)]
         [Unicode(false)]
         public string CartSize { get; set; }
@@ -25,7 +30,7 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         [StringLength(512)]
         [Unicode(false)]
         public string Note { get; set; }
-        public bool? IsRecyclingCart { get; set; }
+        public bool IsRecyclingCart { get; set; }
         [StringLength(50)]
         [Unicode(false)]
         public string CartStatus { get; set; }

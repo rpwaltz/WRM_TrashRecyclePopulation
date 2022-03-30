@@ -81,6 +81,10 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
                 .HasMaxLength(50)
                 .IsUnicode(false);
 
+            entity.Property(e => e.TrashStatus)
+                .HasMaxLength(50)
+                .IsUnicode(false);
+
             entity.Property(e => e.RecyclingStatusDate).HasColumnType("datetime");
 
             entity.Property(e => e.RecyclingWithdrawalDate).HasColumnType("datetime");

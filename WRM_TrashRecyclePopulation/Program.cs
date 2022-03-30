@@ -10,7 +10,9 @@ using OfficeOpenXml;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.SolidWaste.Models;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.SolidWaste;
-
+using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle;
+using System.Configuration;
+using Microsoft.EntityFrameworkCore;
 namespace WRM_TrashRecyclePopulation
     {
 
@@ -47,7 +49,7 @@ namespace WRM_TrashRecyclePopulation
                 WRMLogger.Logger.logMessageAndDeltaTime("Populated KGISAddressCache ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 WRMLogger.Logger.log();
 
-                WRM_EntityFramework.WRM_TrashRecycle.WRM_TrashRecycle wrmTrashRecycleContext = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext;
+                WRM_TrashRecycle wrmTrashRecycleContext = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext;
                 using (wrmTrashRecycleContext)
                     {
                     AddressPopulation addressPopulation = new AddressPopulation();
@@ -63,45 +65,11 @@ namespace WRM_TrashRecyclePopulation
 
                         recyclingAddressCustomerPopulation.populateRecyclingResidentAddress();
 
-                        BackdoorServiceResidentAddressPopulation backdoorServiceResidentAddressPopulation = new BackdoorServiceResidentAddressPopulation();
+                       BackdoorServiceResidentAddressPopulation backdoorServiceResidentAddressPopulation = new BackdoorServiceResidentAddressPopulation();
                         backdoorServiceResidentAddressPopulation.populateBackDoorPickup();
                         }
 
-
-
-                    // clean up the carts, for all the rows in address that have a trash cart that is valid, then create the trash cart with UNKNOWN  as SN
-
-                    // for all the rows in address that have a recycling request approved but no cart, then create the reycling cart with UNKNOWN as SN
-
                     }
-                /*
-                // DateTime then = DateTime.Now;
-                // need the solid wast context to query all the addresses in the recycing request table.
-                // for every valid recycling request table entry, fill in an address and save it to the database
-
-                using (wrmTrashRecycleContext)
-                    {
-                    SolidWaste solidWasteContext = WRM_EntityFrameworkContextCache.SolidWasteContext;
-                    using (solidWasteContext)
-                        {
-                        RecyclingResidentAddressPopulation recyclingAddressCustomerPopulation = new RecyclingResidentAddressPopulation();
-
-                        if (! recyclingAddressCustomerPopulation.populateRecyclingResidentAddress())
-                            {
-                            throw new Exception("RecyclingResidentAddressPopulation failed");
-                            }
-                        BackdoorServiceResidentAddressPopulation backdoorServiceResidentAddressPopulation = new BackdoorServiceResidentAddressPopulation();
-                        if (! backdoorServiceResidentAddressPopulation.populateBackdoorServiceAddressCustomer())
-                            {
-                            throw new Exception("BackdoorServiceResidentAddressPopulation failed");
-                            }
-                        }
-                    WRMLogger.Logger.logMessageAndDeltaTime("Start CartPopulation", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                    WRMLogger.Logger.log();
-                    CartPopulation cartPopulation = new CartPopulation(wrmTrashRecycleContext);
-                    cartPopulation.populateCarts();
-                    }
-                */
 
                 }
 

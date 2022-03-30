@@ -22,9 +22,9 @@ namespace WRM_TrashRecyclePopulation
             {
             try
                 {
-                Program.logLine = "Begin BackDoorPickup Requests";
-                WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                WRMLogger.Logger.log();
+                // Program.logLine = "Begin BackDoorPickup Requests";
+                // WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                // WRMLogger.Logger.log();
 
                 int numberRequestsSaved = 0;
                 IEnumerable<BackdoorServiceRequest> orderedSolidWasteBackdorrRequestList = WRM_EntityFrameworkContextCache.SolidWasteContext.BackdoorServiceRequest.OrderBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.StreetName).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.StreetNumber).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.UnitNumber).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.BackdoorId).ToList();
@@ -38,9 +38,9 @@ namespace WRM_TrashRecyclePopulation
                         // commit all newly added addresses
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                        Program.logLine = "Added Backdoor Resident Requests: " + numberRequestsSaved;
-                        WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        WRMLogger.Logger.log();
+                        // Program.logLine = "Added Backdoor Resident Requests: " + numberRequestsSaved;
+                        // WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        // WRMLogger.Logger.log();
 
                         }
                     try
@@ -74,9 +74,9 @@ namespace WRM_TrashRecyclePopulation
                         // commit all newly added addresses
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                        Program.logLine = "Added Backdoor Resident Requests: " + numberRequestsSaved;
-                        WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        WRMLogger.Logger.log();
+                        // Program.logLine = "Added Backdoor Resident Requests: " + numberRequestsSaved;
+                        // WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        // WRMLogger.Logger.log();
 
                         }
                     try
@@ -105,9 +105,9 @@ namespace WRM_TrashRecyclePopulation
                         // commit all newly added addresses
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                        Program.logLine = "Added Backdoor Resident Requests: " + numberRequestsSaved;
-                        WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        WRMLogger.Logger.log();
+                        // Program.logLine = "Added Backdoor Resident Requests: " + numberRequestsSaved;
+                        // WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        // WRMLogger.Logger.log();
 
                         }
                     try
@@ -296,14 +296,11 @@ namespace WRM_TrashRecyclePopulation
                 case "MEDICAL NEED/OVER 75":
                     status = "APPROVED";
                     break;
-                case "REQUESTED":
-                    status = "REQUESTED";
-                    break;
                 case "WITHDRAWN":
                     status = "WITHDRAWN";
                     break;
                 default:
-                    throw new Exception(" Invalid Recycling status :" + status);
+                    throw new WRMWithdrawnStatusException(" Invalid Recycling status :" + status);
                 }
             return status;
             }

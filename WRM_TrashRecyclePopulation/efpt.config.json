@@ -34,12 +34,13 @@
          "ObjectType": 0
       }
    ],
-   "UiHint": "edimmu\\udug.WRM_TrashRecycle.dbo",
+   "UiHint": "APPTESTDB\\APPSSQL16.",
    "UseBoolPropertiesWithoutDefaultSql": false,
    "UseDatabaseNames": true,
    "UseDbContextSplitting": true,
    "UseFluentApiOnly": false,
    "UseHandleBars": false,
+   "UseHierarchyId": false,
    "UseInflector": false,
    "UseLegacyPluralizer": false,
    "UseManyToManyEntity": false,

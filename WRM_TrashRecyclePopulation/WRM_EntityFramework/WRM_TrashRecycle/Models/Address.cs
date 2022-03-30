@@ -43,7 +43,6 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         [StringLength(30)]
         [Unicode(false)]
         public string GISAddressUseType { get; set; }
-        public bool? RecyclingPickup { get; set; }
         [StringLength(50)]
         [Unicode(false)]
         public string RecyclingStatus { get; set; }
@@ -67,7 +66,9 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         [StringLength(10)]
         [Unicode(false)]
         public string TrashDayOfWeek { get; set; }
-        public bool? TrashPickup { get; set; }
+        [StringLength(50)]
+        [Unicode(false)]
+        public string TrashStatus { get; set; }
         [Column(TypeName = "numeric(38, 8)")]
         public decimal? GISPointX { get; set; }
         [Column(TypeName = "numeric(38, 8)")]

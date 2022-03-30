@@ -33,8 +33,8 @@ namespace WRM_TrashRecyclePopulation
                             KGISAddressImporter.kgisAddressCache.Add(kgisIdentifier, kgisAddress);
                             }
                         }
-                    WRMLogger.LogBuilder.AppendLine("Number of Address from KGIS " + countAddresses.ToString());
-                    WRMLogger.Logger.log();
+                    // WRMLogger.LogBuilder.AppendLine("Number of Address from KGIS " + countAddresses.ToString());
+                    // WRMLogger.Logger.log();
                     }
                 }
             return KGISAddressImporter.kgisAddressCache;
