@@ -57,9 +57,9 @@ namespace WRM_TrashRecyclePopulation
 
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                Program.logLine = "Updated Recycling Addresses: " + numberRequestsUpdates;
-                WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                WRMLogger.Logger.log();
+ //               Program.logLine = "Updated Recycling Addresses: " + numberRequestsUpdates;
+ //               WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+ //               WRMLogger.Logger.log();
 
                 // Add all new addresses from the dictionary referred to above
                 numberRequestsSaved = 0;
@@ -83,9 +83,9 @@ namespace WRM_TrashRecyclePopulation
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                Program.logLine = "Added Recycling Addresses: " + numberRequestsSaved;
-                WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                WRMLogger.Logger.log();
+ //               Program.logLine = "Added Recycling Addresses: " + numberRequestsSaved;
+ //               WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+ //               WRMLogger.Logger.log();
                 foreach (Address address in WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Address.ToList())
                     {
                     string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
@@ -126,9 +126,9 @@ namespace WRM_TrashRecyclePopulation
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                Program.logLine = "Updated Added Recycling Addresses: " + numberRequestsUpdates;
-                WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                WRMLogger.Logger.log();
+ //               Program.logLine = "Updated Added Recycling Addresses: " + numberRequestsUpdates;
+ //               WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+ //               WRMLogger.Logger.log();
 
 
                 foreach (Address address in WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Address.ToList())
@@ -169,9 +169,9 @@ namespace WRM_TrashRecyclePopulation
                     }
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                Program.logLine = "Add new Residents " + numberRequestsSaved;
-                WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                WRMLogger.Logger.log();
+ //               Program.logLine = "Add new Residents " + numberRequestsSaved;
+ //               WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+ //               WRMLogger.Logger.log();
 
 
                 numberRequestsSaved = 0;
@@ -203,9 +203,9 @@ namespace WRM_TrashRecyclePopulation
                     }
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-                Program.logLine = "Updated Added new Residents " + numberRequestsSaved;
-                WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                WRMLogger.Logger.log();
+//                Program.logLine = "Updated Added new Residents " + numberRequestsSaved;
+//                WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+//                WRMLogger.Logger.log();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
 
                 foreach (Resident resident in WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Resident.ToList())
@@ -233,9 +233,9 @@ namespace WRM_TrashRecyclePopulation
         // The boolean isAdded is true if the request is added to the RecyclingResidentAddressDictionary, if it is an update then it is false
         public bool populateAddressFromRecycleRequest(RecyclingRequest request)
             {
-            WRMLogger.LogBuilder.AppendLine("Dates of exising Recycling Request " +
-            System.Environment.NewLine + "Request Update Date " + request.LastUpdatedDate.ToString() +
-            System.Environment.NewLine + "Request Create Date " + request.CreationDate.ToString());
+//            WRMLogger.LogBuilder.AppendLine("Dates of exising Recycling Request " +
+//            System.Environment.NewLine + "Request Update Date " + request.LastUpdatedDate.ToString() +
+//            System.Environment.NewLine + "Request Create Date " + request.CreationDate.ToString());
 
             bool isAdded = false;
             string status = request.Status.Trim();
@@ -250,7 +250,7 @@ namespace WRM_TrashRecyclePopulation
 
             string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(streetName, streetNumber, unitNumber, zipCode);
 
-            WRMLogger.LogBuilder.AppendLine("PopulateAddressFromRecycleRequest " + dictionaryKey);
+//            WRMLogger.LogBuilder.AppendLine("PopulateAddressFromRecycleRequest " + dictionaryKey);
             Address foundAddress = new Address();
             if (AddressPopulation.AddressDictionary.TryGetValue(dictionaryKey, out foundAddress))
                 {
@@ -267,7 +267,7 @@ namespace WRM_TrashRecyclePopulation
                     (((request.LastUpdatedDate ?? Program.posixEpoche) == (foundAddress.UpdateDate ?? Program.posixEpoche))
                        && ((request.CreationDate ?? Program.posixEpoche) > (foundAddress.CreateDate ?? Program.posixEpoche)))))
                     {
-                    WRMLogger.LogBuilder.AppendLine("Update existing Recycling Request at " + dictionaryKey + " for ID " + AddressPopulation.AddressDictionary[dictionaryKey].AddressID);
+ //                   WRMLogger.LogBuilder.AppendLine("Update existing Recycling Request at " + dictionaryKey + " for ID " + AddressPopulation.AddressDictionary[dictionaryKey].AddressID);
                     AddressPopulation.AddressDictionary[dictionaryKey].CreateDate = request.CreationDate;
                     AddressPopulation.AddressDictionary[dictionaryKey].CreateUser = request.CreatedBy;
                     AddressPopulation.AddressDictionary[dictionaryKey].UpdateDate = request.LastUpdatedDate;
@@ -288,13 +288,13 @@ namespace WRM_TrashRecyclePopulation
                     }
                 else
                     {
-                    WRMLogger.LogBuilder.AppendLine("Skip exising Recycling Request at " + dictionaryKey +
-                        System.Environment.NewLine + "Request Status " + status +
-                        System.Environment.NewLine + "Request Update Date " + request.LastUpdatedDate.ToString() +
-                        System.Environment.NewLine + "Found Address Update Date " + foundAddress.UpdateDate.ToString() +
-                        System.Environment.NewLine + "Request Create Date " + request.CreationDate.ToString() +
-                        System.Environment.NewLine + "Found Address Create Date " + foundAddress.CreateDate.ToString() +
-                        System.Environment.NewLine + "Epoche " + Program.posixEpoche.ToShortDateString());
+//                    WRMLogger.LogBuilder.AppendLine("Skip exising Recycling Request at " + dictionaryKey +
+//                        System.Environment.NewLine + "Request Status " + status +
+//                        System.Environment.NewLine + "Request Update Date " + request.LastUpdatedDate.ToString() +
+//                        System.Environment.NewLine + "Found Address Update Date " + foundAddress.UpdateDate.ToString() +
+//                        System.Environment.NewLine + "Request Create Date " + request.CreationDate.ToString() +
+//                        System.Environment.NewLine + "Found Address Create Date " + foundAddress.CreateDate.ToString() +
+//                        System.Environment.NewLine + "Epoche " + Program.posixEpoche.ToShortDateString());
                         ;
                     }
                 }
@@ -307,7 +307,7 @@ namespace WRM_TrashRecyclePopulation
                     // if an address does not already exist then do not add it if it is withdrawn
                     if (!status.Equals("NOT RECYCLING"))
                         {
-                        WRMLogger.LogBuilder.AppendLine("New Recycling Request at " + dictionaryKey);
+//                        WRMLogger.LogBuilder.AppendLine("New Recycling Request at " + dictionaryKey);
                         address.CreateDate = request.CreationDate;
                         address.CreateUser = request.CreatedBy;
                         address.UpdateDate = request.LastUpdatedDate;
