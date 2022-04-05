@@ -143,7 +143,9 @@ namespace WRM_TrashRecyclePopulation
                             continue;
                             }
                         if ((!String.IsNullOrEmpty(snSpreadsheetRow.CurrentTrashCartSN))
-                        && (!snSpreadsheetRow.CurrentTrashCartSN.ToUpper().Equals("NO TRASH")))
+                        && ((!snSpreadsheetRow.CurrentTrashCartSN.ToUpper().Equals("NO TRASH")) ||
+                            (snSpreadsheetRow.CurrentRecycleCartSN.ToUpper().Equals("WITHDRAWN"))))
+                        
                             {
                             Cart cart = new Cart();
 
@@ -883,8 +885,9 @@ namespace WRM_TrashRecyclePopulation
                     SNSpreadsheetRow snSpreadsheetRow = snSpreadSheetRowPair.Value;
                     try
                         {
+
                         if ((!String.IsNullOrEmpty(snSpreadsheetRow.CurrentRecycleCartSN))
-                            && (snSpreadsheetRow.CurrentRecycleCartSN.ToUpper().Equals("INELIGIBLE")))
+                            && ((snSpreadsheetRow.CurrentRecycleCartSN.ToUpper().Equals("INELIGIBLE")) || (snSpreadsheetRow.CurrentRecycleCartSN.ToUpper().Equals("WITHDRAWN"))))
                             {
                             AddressPopulation.AddressDictionary[snSpreadSheetRowPair.Key].RecyclingStatus = "NOT RECYCLING";
                             updateDatabaseAddressList.Add(snSpreadSheetRowPair.Key);
@@ -1102,6 +1105,7 @@ namespace WRM_TrashRecyclePopulation
                     rejectAddress = true;
                     }
                 }
+
 
             if (!String.IsNullOrEmpty(snSpreadsheetRow.NoCartHere))
                 {
