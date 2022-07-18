@@ -14,6 +14,7 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         {
             BackDoorPickup = new HashSet<BackDoorPickup>();
             Cart = new HashSet<Cart>();
+            CommercialAccount = new HashSet<CommercialAccount>();
             Resident = new HashSet<Resident>();
         }
 
@@ -40,10 +41,11 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         [StringLength(50)]
         [Unicode(false)]
         public string AddressType { get; set; }
+        public bool? AlleyPickup { get; set; }
         [StringLength(30)]
         [Unicode(false)]
         public string GISAddressUseType { get; set; }
-        [StringLength(50)]
+        [StringLength(25)]
         [Unicode(false)]
         public string RecyclingStatus { get; set; }
         [Column(TypeName = "datetime")]
@@ -66,7 +68,7 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         [StringLength(10)]
         [Unicode(false)]
         public string TrashDayOfWeek { get; set; }
-        [StringLength(50)]
+        [StringLength(25)]
         [Unicode(false)]
         public string TrashStatus { get; set; }
         [Column(TypeName = "numeric(38, 8)")]
@@ -77,6 +79,9 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         public decimal? GISLatitude { get; set; }
         [Column(TypeName = "numeric(38, 8)")]
         public decimal? GISLongitude { get; set; }
+        [StringLength(512)]
+        [Unicode(false)]
+        public string BillingNote { get; set; }
         [StringLength(512)]
         [Unicode(false)]
         public string Comment { get; set; }
@@ -95,6 +100,8 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         public virtual ICollection<BackDoorPickup> BackDoorPickup { get; set; }
         [InverseProperty("Address")]
         public virtual ICollection<Cart> Cart { get; set; }
+        [InverseProperty("Address")]
+        public virtual ICollection<CommercialAccount> CommercialAccount { get; set; }
         [InverseProperty("Address")]
         public virtual ICollection<Resident> Resident { get; set; }
     }

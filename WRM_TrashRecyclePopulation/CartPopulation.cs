@@ -172,24 +172,32 @@ namespace WRM_TrashRecyclePopulation
                                 cart.CartSize = "96 GALLON";
                                 }
                             //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                            cart.IsRecyclingCart = false;
+                            cart.CartStatus = "TRASH";
                             cart.CartStatus = "ACTIVE";
                             int addressId = 0;
                             string addressKey = snSpreadSheetRowPair.Key;
-
-                            if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(addressKey, out addressId))
+                            if (!addressKey.StartsWith("NOADDRESS"))
                                 {
-                                throw new WRMNullValueException("Current Cart Address cannot be found in AddressIdentiferDictionary " + addressKey);
+                                if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(addressKey, out addressId))
+                                    {
+                                    throw new WRMNullValueException("Current Cart Address cannot be found in AddressIdentiferDictionary " + addressKey);
+                                    }
+                                AddressPopulation.AddressDictionary[addressKey].TrashStatus = "ELIGIBLE";
+                                updateDatabaseAddressList.Add(addressKey);
+                                cart.AddressID = addressId;
                                 }
-                            cart.AddressID = addressId;
+                            else
+                                {
+                                WRMLogger.LogBuilder.AppendLine("Ignoring ? in line: " + snSpreadsheetRow.RowNumber);
+                                }
                             cart.Note = snSpreadsheetRow.Notes;
  //                           cart.CreateDate = DateTime.Now;
  //                           cart.CreateUser = "TrashRecyclePopulation";
  //                           cart.UpdateDate = DateTime.Now;
  //                           cart.UpdateUser = "TrashRecyclePopulation";
 
-                            AddressPopulation.AddressDictionary[addressKey].TrashStatus = "ELIGIBLE";
-                            updateDatabaseAddressList.Add(addressKey);
+
+
                             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(cart);
                             ++cartCount;
                             }
@@ -278,7 +286,8 @@ namespace WRM_TrashRecyclePopulation
                                 cart.CartSize = "96 GALLON";
                                 }
                             //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                            cart.IsRecyclingCart = false;
+
+                            cart.CartType = "TRASH";
                             cart.CartStatus = "ACTIVE";
                             int addressId = 0;
                             string addressKey = snSpreadSheetRowPair.Key;
@@ -371,7 +380,7 @@ namespace WRM_TrashRecyclePopulation
                                 cart.CartSize = "96 GALLON";
                                 }
                             //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                            cart.IsRecyclingCart = false;
+                            cart.CartType = "TRASH";
                             cart.CartStatus = "ACTIVE";
                             int addressId = 0;
                             string addressKey = snSpreadSheetRowPair.Key;
@@ -463,7 +472,7 @@ namespace WRM_TrashRecyclePopulation
                                 cart.CartSize = "96 GALLON";
                                 }
                             //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                            cart.IsRecyclingCart = false;
+                            cart.CartType = "TRASH";
                             cart.CartStatus = "ACTIVE";
                             int addressId = 0;
                             string addressKey = snSpreadSheetRowPair.Key;
@@ -555,7 +564,7 @@ namespace WRM_TrashRecyclePopulation
                                 cart.CartSize = "96 GALLON";
                                 }
                             //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                            cart.IsRecyclingCart = false;
+                            cart.CartType = "TRASH";
                             cart.CartStatus = "ACTIVE";
                             int addressId = 0;
                             string addressKey = snSpreadSheetRowPair.Key;
@@ -642,7 +651,7 @@ namespace WRM_TrashRecyclePopulation
                             cart.CartSize = "64 GALLON";
 
                             //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                            cart.IsRecyclingCart = true;
+                            cart.CartType = "RECYCLING";
                             cart.CartStatus = "ACTIVE";
                             int addressId = 0;
                             string addressKey = snSpreadSheetRowPair.Key;
@@ -729,7 +738,7 @@ namespace WRM_TrashRecyclePopulation
                             cart.CartSize = "64 GALLON";
 
                             //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                            cart.IsRecyclingCart = true;
+                            cart.CartType = "RECYCLING";
                             cart.CartStatus = "ACTIVE";
                             int addressId = 0;
                             string addressKey = snSpreadSheetRowPair.Key;
@@ -816,7 +825,7 @@ namespace WRM_TrashRecyclePopulation
                             cart.CartSize = "64 GALLON";
 
                             //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                            cart.IsRecyclingCart = true;
+                            cart.CartType = "RECYCLING";
                             cart.CartStatus = "ACTIVE";
                             int addressId = 0;
                             string addressKey = snSpreadSheetRowPair.Key;
@@ -914,20 +923,27 @@ namespace WRM_TrashRecyclePopulation
                             cart.CartSize = "64 GALLON";
 
                             //adding to Cart and then deleting allows for the trigger to create a cart history id for the record
-                            cart.IsRecyclingCart = true;
+                            cart.CartType = "RECYCLING";
                             cart.CartStatus = "ACTIVE";
                             int addressId = 0;
                             string addressKey = snSpreadSheetRowPair.Key;
-
-                            if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(addressKey, out addressId))
+                            if (!addressKey.StartsWith("NOADDRESS"))
                                 {
-                                throw new WRMNullValueException("Current Recycling Cart Address cannot be found in AddressIdentiferDictionary " + addressKey);
+
+                                if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(addressKey, out addressId))
+                                    {
+                                    throw new WRMNullValueException("Current Recycling Cart Address cannot be found in AddressIdentiferDictionary " + addressKey);
+                                    }
+                                AddressPopulation.AddressDictionary[addressKey].RecyclingStatus = "RECYCLING";
+                                updateDatabaseAddressList.Add(addressKey);
+
+                                cart.AddressID = addressId;
                                 }
-                            AddressPopulation.AddressDictionary[addressKey].RecyclingStatus = "RECYCLING";
-                            updateDatabaseAddressList.Add(addressKey);
-                            WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(cart);
-                            cart.AddressID = addressId;
-                            cart.Note = snSpreadsheetRow.Notes;
+                            else
+                                {
+                                WRMLogger.LogBuilder.AppendLine("Ignoring ? in line: " + snSpreadsheetRow.RowNumber);
+                                }
+                              cart.Note = snSpreadsheetRow.Notes;
 //                            cart.CreateDate = DateTime.Now;
 //                            cart.CreateUser = "TrashRecyclePopulation";
 //                            cart.UpdateDate = DateTime.Now;
@@ -1009,15 +1025,20 @@ namespace WRM_TrashRecyclePopulation
                             }
 
                         Address address = snSpreadsheetRow.Address;
+                        if (address != null && address.StreetName.Contains("?"))
+                            {
+                            WRMLogger.LogBuilder.AppendLine("Ignoring ? in line: " + snSpreadsheetRow.RowNumber);
+                            continue;
+                            }
                         Address foundAddress = new Address();
                         if (AddressPopulation.AddressDictionary.TryGetValue(dictionaryKey, out foundAddress))
                             {
                             // overwrite address type if populated in spreadsheet
                             AddressPopulation.AddressDictionary[dictionaryKey].TrashStatus = address.TrashStatus;
                             AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatus = address.RecyclingStatus;
-//                            AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatusDate = DateTime.Now;
-//                            AddressPopulation.AddressDictionary[dictionaryKey].UpdateDate = DateTime.Now;
-//                            AddressPopulation.AddressDictionary[dictionaryKey].UpdateUser = "TrashRecyclePopulation";
+                            //                            AddressPopulation.AddressDictionary[dictionaryKey].RecyclingStatusDate = DateTime.Now;
+                            //                            AddressPopulation.AddressDictionary[dictionaryKey].UpdateDate = DateTime.Now;
+                            //                            AddressPopulation.AddressDictionary[dictionaryKey].UpdateUser = "TrashRecyclePopulation";
                             AddressPopulation.AddressDictionary[dictionaryKey].NumberUnits = snSpreadsheetRow.MultiFamilyUnit;
 
                             if ((!String.IsNullOrEmpty(address.AddressType)) && !address.AddressType.Equals(foundAddress.AddressType))
@@ -1026,7 +1047,14 @@ namespace WRM_TrashRecyclePopulation
                                 }
                             if (!addedAddressesDuringPopulation.Contains(dictionaryKey))
                                 {
-                                address.NumberUnits = snSpreadsheetRow.MultiFamilyUnit;
+                                if (String.IsNullOrEmpty(snSpreadsheetRow.MultiFamilyUnit))
+                                    {
+                                    address.NumberUnits = "1";
+                                    }
+                                else
+                                    {
+                                    address.NumberUnits = snSpreadsheetRow.MultiFamilyUnit;
+                                    }
                                 // WRMLogger.LogBuilder.AppendLine("Address Cart population found Address Key: Total MilliSeconds passed : " + dictionaryKey);
                                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
                                 ++maxToProcess;
@@ -1035,7 +1063,14 @@ namespace WRM_TrashRecyclePopulation
                             }
                         else
                             {
-                            address.NumberUnits = snSpreadsheetRow.MultiFamilyUnit;
+                            if (String.IsNullOrEmpty(snSpreadsheetRow.MultiFamilyUnit))
+                                {
+                                address.NumberUnits = "1";
+                                }
+                            else
+                                {
+                                address.NumberUnits = snSpreadsheetRow.MultiFamilyUnit;
+                                }
                             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
                             AddressPopulation.AddressDictionary.Add(dictionaryKey, address);
                             addedAddressesDuringPopulation.Add(dictionaryKey);
@@ -1052,8 +1087,14 @@ namespace WRM_TrashRecyclePopulation
                         WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
 
                         }
+                    catch (Exception ex)
+                        {
+                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        throw ex;
+                        }
 
-                    }
+
+                        }
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
@@ -1064,7 +1105,22 @@ namespace WRM_TrashRecyclePopulation
                     AddressPopulation.AddressIdentiferDictionary[dictionaryKey] = address.AddressID;
                     AddressPopulation.ReverseAddressIdentiferDictionary[address.AddressID] = dictionaryKey;
                     AddressPopulation.AddressDictionary[dictionaryKey] = address;
+                    if (address.AddressType.Equals("COMMERCIAL"))
+                        {
+                        CommercialAccount commercialAccout = CommercialAccountPopulation.buildCommercialAccountFromAddress(address);
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(commercialAccout);
+                        }
                     }
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
+                WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
+                /*
+                foreach (CommercialAccount commercialAccount in WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.CommercialAccount.ToList())
+                    {
+                    CommercialAccountPopulation.CommercialAccountDictionary.Add(commercialAccount.AddressID, commercialAccount);
+                    CommercialAccountPopulation.CommercialAccountList.Add(commercialAccount);
+                    }
+                */
                 justNow = DateTime.Now;
                 timeDiff = justNow - beforeNow;
                 // WRMLogger.LogBuilder.AppendLine("End Address Cart population " + maxToProcess + " " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
@@ -1460,6 +1516,10 @@ namespace WRM_TrashRecyclePopulation
                         snSpreadsheetRow.Address = address;
                         if (!rejectAddress(snSpreadsheetRow))
                             {
+                            if (address.StreetName.Contains("?"))
+                                {
+                                dictionaryKey = "NOADDRESS" + snSpreadsheetRow.CurrentTrashCartSN;
+                                }
                             snMasterDictionary.Add(dictionaryKey, snSpreadsheetRow);
                             }
                         }

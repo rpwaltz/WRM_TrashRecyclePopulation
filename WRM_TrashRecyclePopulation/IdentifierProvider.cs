@@ -12,7 +12,7 @@ namespace WRM_TrashRecyclePopulation
         // static private Dictionary<string, string[]> 
         static public Dictionary<string, string[]> streetNumberConversionTable = new Dictionary<string, string[]>() {
              { "2ND", new string[] {"THIRD" } } ,
-            { "3RD",    new string[] {"THIRD"} },
+             { "3RD",    new string[] {"THIRD"} },
              { "4TH", new string[] { "FOURTH", "AVE"} },
              { "5TH" , new string[] { "FIFTH","AVE"} },
              { "6TH" , new string[] { "SIXTH"} },

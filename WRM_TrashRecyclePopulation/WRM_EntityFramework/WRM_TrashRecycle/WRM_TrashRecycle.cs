@@ -23,13 +23,16 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle
         public virtual DbSet<Address> Address { get; set; }
         public virtual DbSet<BackDoorPickup> BackDoorPickup { get; set; }
         public virtual DbSet<Cart> Cart { get; set; }
+        public virtual DbSet<CommercialAccount> CommercialAccount { get; set; }
         public virtual DbSet<KGISAddress> KGISAddress { get; set; }
         public virtual DbSet<Resident> Resident { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.ApplyConfiguration(new Configurations.AddressConfiguration());
             modelBuilder.ApplyConfiguration(new Configurations.BackDoorPickupConfiguration());
             modelBuilder.ApplyConfiguration(new Configurations.CartConfiguration());
+            modelBuilder.ApplyConfiguration(new Configurations.CommercialAccountConfiguration());
             modelBuilder.ApplyConfiguration(new Configurations.ResidentConfiguration());
 
             OnModelCreatingPartial(modelBuilder);

@@ -61,7 +61,7 @@ namespace WRM_TrashRecyclePopulation
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 foreach (Resident resident in WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Resident.ToList())
                     {
-                    string dictionaryKey = ReverseAddressIdentiferDictionary[resident.AddressID ?? 0];
+                    string dictionaryKey = ReverseAddressIdentiferDictionary[resident.AddressID];
                     ResidentAddressPopulation.ResidentIdentiferDictionary[dictionaryKey] = resident.ResidentID;
                     }
 
@@ -179,18 +179,14 @@ namespace WRM_TrashRecyclePopulation
             if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
                 {
 
-                throw new WRMNullValueException("Unable to find Address : " + dictionaryKey);
+                throw new WRMNullValueException("Backdoor Unable to find Address : " + dictionaryKey);
                 }
-            int foundResidentId = 0;
-            if (!ResidentAddressPopulation.ResidentIdentiferDictionary.TryGetValue(dictionaryKey, out foundResidentId))
-                {
-                throw new WRMNullValueException("Unable to find Resident : " + dictionaryKey);
-                }
+
             BackDoorPickup backdoorPickup = buildRequestBackdoorService(backdoorRequest);
             
             backdoorPickup.AddressID = foundAddressId;
-            backdoorPickup.ResidentID = foundResidentId;
-            string backdoorRequestKey = foundAddressId + ":" + foundResidentId;
+
+            string backdoorRequestKey = foundAddressId.ToString();
             
             BackDoorPickup foundBackDoorPickup = new BackDoorPickup();
 
@@ -216,18 +212,14 @@ namespace WRM_TrashRecyclePopulation
             if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
                 {
 
-                throw new WRMNullValueException("Unable to find Address : " + dictionaryKey);
+                throw new WRMNullValueException("Backdoor Unable to find Address : " + dictionaryKey);
                 }
-            int foundResidentId = 0;
-            if (!ResidentAddressPopulation.ResidentIdentiferDictionary.TryGetValue(dictionaryKey, out foundResidentId))
-                {
-                throw new WRMNullValueException("Unable to find Resident : " + dictionaryKey);
-                }
+
             BackDoorPickup backdoorPickup = buildRequestBackdoorService(backdoorRequest);
 
             backdoorPickup.AddressID = foundAddressId;
-            backdoorPickup.ResidentID = foundResidentId;
-            string backdoorRequestKey = foundAddressId + ":" + foundResidentId;
+
+            string backdoorRequestKey = foundAddressId.ToString();
 
             BackDoorPickup foundBackDoorPickup = new BackDoorPickup();
 

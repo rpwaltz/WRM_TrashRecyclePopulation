@@ -26,6 +26,10 @@
          "ObjectType": 0
       },
       {
+         "Name": "[dbo].[CommercialAccount]",
+         "ObjectType": 0
+      },
+      {
          "Name": "[dbo].[KGISAddress]",
          "ObjectType": 0
       },
@@ -34,7 +38,7 @@
          "ObjectType": 0
       }
    ],
-   "UiHint": "APPTESTDB\\APPSSQL16.",
+   "UiHint": "APPTESTDB\\APPSSQL16.WRM_TrashRecycle",
    "UseBoolPropertiesWithoutDefaultSql": false,
    "UseDatabaseNames": true,
    "UseDbContextSplitting": true,

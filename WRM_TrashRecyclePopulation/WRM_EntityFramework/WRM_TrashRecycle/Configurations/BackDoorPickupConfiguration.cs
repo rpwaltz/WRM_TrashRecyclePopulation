@@ -13,16 +13,19 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
     {
         public void Configure(EntityTypeBuilder<BackDoorPickup> entity)
         {
+            entity.Property(e => e.CreateDate).HasDefaultValueSql("(getdate())");
+
+            entity.Property(e => e.CreateUser).HasDefaultValueSql("(user_name())");
+
+            entity.Property(e => e.UpdateDate).HasDefaultValueSql("(getdate())");
+
+            entity.Property(e => e.UpdateUser).HasDefaultValueSql("(user_name())");
+
             entity.HasOne(d => d.Address)
                 .WithMany(p => p.BackDoorPickup)
                 .HasForeignKey(d => d.AddressID)
-                .HasConstraintName("FK_BackDoorPickup_AddressID");
-
-            entity.HasOne(d => d.Resident)
-                .WithMany(p => p.BackDoorPickup)
-                .HasForeignKey(d => d.ResidentID)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_BackDoorPickup_ResidentID");
+                .HasConstraintName("FK_BackDoorPickup_AddressID");
 
             OnConfigurePartial(entity);
         }

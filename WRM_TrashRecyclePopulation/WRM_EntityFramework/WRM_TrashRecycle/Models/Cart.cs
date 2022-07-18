@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
 {
-    [Index(nameof(CompositeCartKey), Name = "UK_CompositeCartKey", IsUnique = true)]
+    [Index("CompositeCartKey", Name = "UK_CompositeCartKey", IsUnique = true)]
     public partial class Cart
     {
         [Key]
@@ -19,7 +19,7 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         [Unicode(false)]
         public string CartSerialNumber { get; set; }
         [Required]
-        [StringLength(269)]
+        [StringLength(318)]
         [Unicode(false)]
         public string CompositeCartKey { get; set; }
         [StringLength(10)]
@@ -30,8 +30,10 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         [StringLength(512)]
         [Unicode(false)]
         public string Note { get; set; }
-        public bool IsRecyclingCart { get; set; }
         [StringLength(50)]
+        [Unicode(false)]
+        public string CartType { get; set; }
+        [StringLength(25)]
         [Unicode(false)]
         public string CartStatus { get; set; }
         [StringLength(100)]
@@ -45,7 +47,7 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         [Column(TypeName = "datetime")]
         public DateTime? UpdateDate { get; set; }
 
-        [ForeignKey(nameof(AddressID))]
+        [ForeignKey("AddressID")]
         [InverseProperty("Cart")]
         public virtual Address Address { get; set; }
     }

@@ -13,104 +13,17 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
     {
         public void Configure(EntityTypeBuilder<Address> entity)
         {
+            entity.Property(e => e.AlleyPickup).HasDefaultValueSql("((0))");
 
-            entity.Property(e => e.AddressID).HasColumnName("AddressID");
+            entity.Property(e => e.CreateDate).HasDefaultValueSql("(getdate())");
 
-            entity.Property(e => e.AddressType)
-                .IsRequired()
-                .HasMaxLength(50)
-                .IsUnicode(false);
+            entity.Property(e => e.CreateUser).HasDefaultValueSql("(user_name())");
 
-            entity.Property(e => e.Comment)
-                .HasMaxLength(512)
-                .IsUnicode(false);
+            entity.Property(e => e.NumberUnits).HasDefaultValueSql("('1')");
 
-            entity.Property(e => e.CreateDate).HasColumnType("datetime");
+            entity.Property(e => e.UpdateDate).HasDefaultValueSql("(getdate())");
 
-            entity.Property(e => e.CreateUser)
-                .HasMaxLength(100)
-                .IsUnicode(false);
-
-            entity.Property(e => e.GISAddressUseType)
-                .HasMaxLength(30)
-                .IsUnicode(false)
-                .HasColumnName("GISAddressUseType");
-
-            entity.Property(e => e.GISLatitude)
-                .HasColumnType("numeric(38, 8)")
-                .HasColumnName("GISLatitude");
-
-            entity.Property(e => e.GISLongitude)
-                .HasColumnType("numeric(38, 8)")
-                .HasColumnName("GISLongitude");
-
-            entity.Property(e => e.GISParcelID)
-                .HasMaxLength(11)
-                .IsUnicode(false)
-                .HasColumnName("GISParcelID");
-
-            entity.Property(e => e.GISPointX)
-                .HasColumnType("numeric(38, 8)")
-                .HasColumnName("GISPointX");
-
-            entity.Property(e => e.GISPointY)
-                .HasColumnType("numeric(38, 8)")
-                .HasColumnName("GISPointY");
-
-            entity.Property(e => e.NumberUnits)
-                .HasMaxLength(10)
-                .IsUnicode(false);
-
-            entity.Property(e => e.RecycleDayOfWeek)
-                .HasMaxLength(10)
-                .IsUnicode(false);
-
-            entity.Property(e => e.RecycleFrequency)
-                .HasMaxLength(10)
-                .IsUnicode(false);
-
-            entity.Property(e => e.RecyclingApprovalDate).HasColumnType("datetime");
-
-            entity.Property(e => e.RecyclingComment)
-                .HasMaxLength(512)
-                .IsUnicode(false);
-
-            entity.Property(e => e.RecyclingRequestedDate).HasColumnType("datetime");
-
-            entity.Property(e => e.RecyclingStatus)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-
-            entity.Property(e => e.TrashStatus)
-                .HasMaxLength(50)
-                .IsUnicode(false);
-
-            entity.Property(e => e.RecyclingStatusDate).HasColumnType("datetime");
-
-            entity.Property(e => e.RecyclingWithdrawalDate).HasColumnType("datetime");
-
-            entity.Property(e => e.StreetName)
-                .IsRequired()
-                .HasMaxLength(100)
-                .IsUnicode(false);
-
-            entity.Property(e => e.TrashDayOfWeek)
-                .HasMaxLength(10)
-                .IsUnicode(false);
-
-            entity.Property(e => e.UnitNumber)
-                .HasMaxLength(20)
-                .IsUnicode(false);
-
-            entity.Property(e => e.UpdateDate).HasColumnType("datetime");
-
-            entity.Property(e => e.UpdateUser)
-                .HasMaxLength(100)
-                .IsUnicode(false);
-
-            entity.Property(e => e.ZipCode)
-                .HasMaxLength(20)
-                .IsUnicode(false);
+            entity.Property(e => e.UpdateUser).HasDefaultValueSql("(user_name())");
 
             OnConfigurePartial(entity);
         }

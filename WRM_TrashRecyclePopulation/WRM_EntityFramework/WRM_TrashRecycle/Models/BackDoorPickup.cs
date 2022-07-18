@@ -12,12 +12,11 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
     {
         [Key]
         public int BackDoorPickupID { get; set; }
-        public int ResidentID { get; set; }
-        public int? AddressID { get; set; }
+        public int AddressID { get; set; }
         [StringLength(50)]
         [Unicode(false)]
         public string BackdoorType { get; set; }
-        [StringLength(50)]
+        [StringLength(25)]
         [Unicode(false)]
         public string BackdoorStatus { get; set; }
         [Column(TypeName = "datetime")]
@@ -40,11 +39,8 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         [Column(TypeName = "datetime")]
         public DateTime? UpdateDate { get; set; }
 
-        [ForeignKey(nameof(AddressID))]
+        [ForeignKey("AddressID")]
         [InverseProperty("BackDoorPickup")]
         public virtual Address Address { get; set; }
-        [ForeignKey(nameof(ResidentID))]
-        [InverseProperty("BackDoorPickup")]
-        public virtual Resident Resident { get; set; }
     }
 }

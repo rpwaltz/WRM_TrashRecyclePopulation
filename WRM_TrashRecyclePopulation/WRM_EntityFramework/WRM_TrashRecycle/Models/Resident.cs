@@ -10,14 +10,9 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
 {
     public partial class Resident
     {
-        public Resident()
-        {
-            BackDoorPickup = new HashSet<BackDoorPickup>();
-        }
-
         [Key]
         public int ResidentID { get; set; }
-        public int? AddressID { get; set; }
+        public int AddressID { get; set; }
         [StringLength(100)]
         [Unicode(false)]
         public string FirstName { get; set; }
@@ -45,10 +40,8 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         [Column(TypeName = "datetime")]
         public DateTime? UpdateDate { get; set; }
 
-        [ForeignKey(nameof(AddressID))]
+        [ForeignKey("AddressID")]
         [InverseProperty("Resident")]
         public virtual Address Address { get; set; }
-        [InverseProperty("Resident")]
-        public virtual ICollection<BackDoorPickup> BackDoorPickup { get; set; }
     }
 }

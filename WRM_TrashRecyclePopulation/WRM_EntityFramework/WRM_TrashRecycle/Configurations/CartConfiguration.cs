@@ -13,12 +13,26 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
     {
         public void Configure(EntityTypeBuilder<Cart> entity)
         {
-            entity.Property(e => e.CompositeCartKey).HasComputedColumnSql("(concat([CartSerialNumber],[AddressID],[IsRecyclingCart]))", false);
+            entity.Property(e => e.CartSerialNumber).HasDefaultValueSql("('UNKNOWN')");
+
+            entity.Property(e => e.CartSize).HasDefaultValueSql("('96 GALLON')");
+
+            entity.Property(e => e.CartType).HasDefaultValueSql("('TRASH')");
+
+            entity.Property(e => e.CompositeCartKey).HasComputedColumnSql("(concat([CartSerialNumber],[AddressID],[CartType]))", false);
+
+            entity.Property(e => e.CreateDate).HasDefaultValueSql("(getdate())");
+
+            entity.Property(e => e.CreateUser).HasDefaultValueSql("(user_name())");
+
+            entity.Property(e => e.UpdateDate).HasDefaultValueSql("(getdate())");
+
+            entity.Property(e => e.UpdateUser).HasDefaultValueSql("(user_name())");
 
             entity.HasOne(d => d.Address)
                 .WithMany(p => p.Cart)
                 .HasForeignKey(d => d.AddressID)
-                .HasConstraintName("FK__Cart__AddressID__247D636F");
+                .HasConstraintName("FK__Cart__AddressID__5812160E");
 
             OnConfigurePartial(entity);
         }

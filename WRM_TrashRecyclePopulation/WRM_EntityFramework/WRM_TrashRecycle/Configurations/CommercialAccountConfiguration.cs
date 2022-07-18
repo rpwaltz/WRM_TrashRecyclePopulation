@@ -9,27 +9,31 @@ using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
 
 namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Configurations
 {
-    public partial class ResidentConfiguration : IEntityTypeConfiguration<Resident>
+    public partial class CommercialAccountConfiguration : IEntityTypeConfiguration<CommercialAccount>
     {
-        public void Configure(EntityTypeBuilder<Resident> entity)
+        public void Configure(EntityTypeBuilder<CommercialAccount> entity)
         {
             entity.Property(e => e.CreateDate).HasDefaultValueSql("(getdate())");
 
             entity.Property(e => e.CreateUser).HasDefaultValueSql("(user_name())");
+
+            entity.Property(e => e.HasCommercialBillingAlert).HasDefaultValueSql("((0))");
+
+            entity.Property(e => e.HasDowntownCrewPickup).HasDefaultValueSql("((0))");
 
             entity.Property(e => e.UpdateDate).HasDefaultValueSql("(getdate())");
 
             entity.Property(e => e.UpdateUser).HasDefaultValueSql("(user_name())");
 
             entity.HasOne(d => d.Address)
-                .WithMany(p => p.Resident)
+                .WithMany(p => p.CommercialAccount)
                 .HasForeignKey(d => d.AddressID)
                 .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("FK_Resident_AddressID");
+                .HasConstraintName("FK_CommercialAccount_AddressID");
 
             OnConfigurePartial(entity);
         }
 
-        partial void OnConfigurePartial(EntityTypeBuilder<Resident> entity);
+        partial void OnConfigurePartial(EntityTypeBuilder<CommercialAccount> entity);
     }
 }

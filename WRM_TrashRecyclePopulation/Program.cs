@@ -52,7 +52,9 @@ namespace WRM_TrashRecyclePopulation
                 WRM_TrashRecycle wrmTrashRecycleContext = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext;
                 using (wrmTrashRecycleContext)
                     {
-                    AddressPopulation addressPopulation = new AddressPopulation();
+                    CommercialAccountPopulation commercialAccountPopulation = new CommercialAccountPopulation();
+                    commercialAccountPopulation.populateCommercialAccounts();
+/*                    AddressPopulation addressPopulation = new AddressPopulation();
                     addressPopulation.populateAddresses();
 
                     CartPopulation cartPopulation = new CartPopulation();
@@ -65,10 +67,10 @@ namespace WRM_TrashRecyclePopulation
 
                         recyclingAddressCustomerPopulation.populateRecyclingResidentAddress();
 
-                       BackdoorServiceResidentAddressPopulation backdoorServiceResidentAddressPopulation = new BackdoorServiceResidentAddressPopulation();
+                        BackdoorServiceResidentAddressPopulation backdoorServiceResidentAddressPopulation = new BackdoorServiceResidentAddressPopulation();
                         backdoorServiceResidentAddressPopulation.populateBackDoorPickup();
                         }
-
+                */
                     }
 
                 }
