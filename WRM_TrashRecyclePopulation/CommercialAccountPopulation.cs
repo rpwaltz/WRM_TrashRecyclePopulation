@@ -18,8 +18,8 @@ namespace WRM_TrashRecyclePopulation
 
         public static Dictionary<int, CommercialAccount> CommercialAccountDictionary { get => commercialAccountDictionary; set => commercialAccountDictionary = value; }
 
-        private static Regex addressMatchRegex = new Regex(@"(\d+)?\s*([^,]+),?\s*(.*)");
-        private static Regex serviceDaysMatchRegex = new Regex(@"([A-Z]+)(?:\/\s*([A-Z]+)\s*([AB])\s*WEEK)?");
+        public static Regex addressMatchRegex = new Regex(@"(\d+)?\s*([^,]+),?\s*(.*)");
+        public static Regex serviceDaysMatchRegex = new Regex(@"([A-Z]+)(?:\/\s*([A-Z]+)\s*([AB])\s*WEEK)?");
 
         public static List<CommercialAccountRow> CommercialAccountRowList { get => commercialAccountRowList; set => commercialAccountRowList = value; }
 
@@ -29,10 +29,10 @@ namespace WRM_TrashRecyclePopulation
 
         public CommercialAccountPopulation()
             {
-
+            
             addActiveCommercialAccountFromWorksheetIntoDictionary(commercialAccountImporter.ActiveCommercialAccountWorksheet);
             addTerminatedCommercialAccountFromWorksheetIntoDictionary(commercialAccountImporter.TerminatedCommercialAccountWorksheet);
-/*            addDowntownCrewCommercialAccountFromWorksheetIntoDictionary(commercialAccountImporter.DowntownPickupCrewCommercialAccountWorksheet); */
+            addDowntownCrewCommercialAccountFromWorksheetIntoDictionary(commercialAccountImporter.DowntownPickupCrewCommercialAccountWorksheet); 
             }
 
         private void addActiveCommercialAccountFromWorksheetIntoDictionary(ExcelWorksheet worksheet)
@@ -107,15 +107,21 @@ namespace WRM_TrashRecyclePopulation
         public void populateCommercialAccounts()
             {
             
-
             foreach (CommercialAccountRow commercialAccountRow in CommercialAccountRowList)
                 {
                 CommercialAccount commercialAccount = new CommercialAccount();
-                commercialAccount.BillingNote = commercialAccountRow.BillingRate;
-                
+
+                if (commercialAccountRow.HasDowntownCrewPickup)
+                    {
+                    commercialAccount.HasDowntownCrewPickup = true;
+                    }
+                else
+                    {
+                    commercialAccount.HasDowntownCrewPickup = false;    
+                    }
                 switch (commercialAccountRow.Status.ToUpper())
                     {
-                    case "W": 
+                    case "W":
                             {
                             commercialAccount.CommercialAccountStatus = "WITHDRAWN";
                             break;
@@ -151,15 +157,11 @@ namespace WRM_TrashRecyclePopulation
                             continue;
                             }
                     }
-
-                if (String.IsNullOrEmpty(commercialAccountRow.BillingNote))
+                if (commercialAccountRow.IsTermminated)
                     {
-                    commercialAccount.BillingNote = commercialAccountRow.BillingNote;
+                    commercialAccount.CommercialAccountStatus = "BANNED";
                     }
-                else
-                    {
-                    commercialAccount.BillingNote = commercialAccount.BillingNote + @"\n<br/>" + commercialAccountRow.BillingNote;
-                    }
+                commercialAccount.BillingNote = commercialAccountRow.BillingNote;
 
                 if (String.IsNullOrEmpty(commercialAccountRow.AccountNotes))
                     {
@@ -167,23 +169,25 @@ namespace WRM_TrashRecyclePopulation
                     }
                 else
                     {
-                    commercialAccount.BillingNote = commercialAccount.BillingNote + @"\n<br/>" + commercialAccountRow.AccountNotes;
+                    commercialAccount.BillingNote = commercialAccount.BillingNote + "\n" + commercialAccountRow.AccountNotes;
                     }
                 commercialAccount.CommercialAccountName = commercialAccountRow.CustomerName;
                 commercialAccount.CommercialAccountNumber = commercialAccountRow.CustomerNumber;
-                
 
-                string streetName = null;
-                int streetNumber = 0;
-                string zipCode = null;
-                string unitNumber = null;
 
+                string serviceStreetName = null;
+                int serviceStreetNumber = 0;
+                string serviceZipCode = null;
+                string serviceUnitNumber = null;
+                string addressAlternateSchedule = null;
 
                 string serviceDaysWeeks = commercialAccountRow.ServiceDays;
                 string trashServiceDay = null;
                 string recyclingServiceDay = null;
                 string recyclingServiceWeek = null;
-                foreach (Match m in serviceDaysMatchRegex.Matches(serviceDaysWeeks))
+                MatchCollection matchCollection = serviceDaysMatchRegex.Matches(serviceDaysWeeks);
+
+                foreach (Match m in matchCollection)
                     {
                     if (m.Groups[1].Success)
                         {
@@ -213,77 +217,115 @@ namespace WRM_TrashRecyclePopulation
                     {
                     recyclingServiceWeek = null;
                     }
-                WRMLogger.LogBuilder.AppendLine("Recycling Day Week =" + recyclingServiceDay + "/" + recyclingServiceWeek + "- Trash Day =" + trashServiceDay + "-");
-                
+                WRMLogger.LogBuilder.AppendLine("Spreadsheet Recycling Day Week =" + recyclingServiceDay + "/" + recyclingServiceWeek + "- Trash Day =" + trashServiceDay + "-");
+
                 string fullBillingStreetAddress = commercialAccountRow.BillingStreetNumber;
+                int billingStreetNumber = 0;
+                string billingStreetName = null;
+                string billingUnitNumber = null;
                 foreach (Match m in addressMatchRegex.Matches(fullBillingStreetAddress))
                     {
                     if (m.Groups[1].Success)
                         {
-                        streetNumber = int.Parse(m.Groups[1].Value);
+                        billingStreetNumber = int.Parse(m.Groups[1].Value);
                         }
                     if (m.Groups[2].Success)
                         {
-                        streetName = m.Groups[2].Value;
+                        billingStreetName = m.Groups[2].Value;
                         }
                     if (m.Groups[3].Success)
                         {
-                        unitNumber = m.Groups[3].Value;
+                        billingUnitNumber = m.Groups[3].Value;
                         }
-                    commercialAccount.CommercialCity = commercialAccountRow.BillingCity;
-                    commercialAccount.CommercialState =commercialAccountRow.BillingState;
-                    commercialAccount.CommercialStreetNumber = streetNumber;
-                    commercialAccount.CommercialStreetName = streetName;
-                    commercialAccount.CommercialUnitNumber = unitNumber;
-                    commercialAccount.CommercialZipCode = commercialAccountRow.BillingZipCode;
-                    zipCode = commercialAccountRow.BillingZipCode;
+
                     }
-                WRMLogger.LogBuilder.AppendLine("Billing " + streetNumber + " " + streetName + " " + unitNumber);
-                WRMLogger.Logger.log();
+                commercialAccount.CommercialCity = commercialAccountRow.BillingCity;
+                commercialAccount.CommercialState = commercialAccountRow.BillingState;
+                commercialAccount.CommercialStreetNumber = billingStreetNumber;
+                commercialAccount.CommercialStreetName = billingStreetName;
+                commercialAccount.CommercialUnitNumber = billingUnitNumber;
+                commercialAccount.CommercialZipCode = commercialAccountRow.BillingZipCode;
+                WRMLogger.LogBuilder.AppendLine("Billing Address " + billingStreetNumber + " " + billingStreetName + " " + billingUnitNumber);
+
                 if (!String.IsNullOrEmpty(commercialAccountRow.ServiceAddress))
                     {
-                    string streetAddress = commercialAccountRow.ServiceAddress;
-                    foreach (Match m in addressMatchRegex.Matches(streetAddress))
+                    string serviceAddress = commercialAccountRow.ServiceAddress;
+                    foreach (Match m in addressMatchRegex.Matches(serviceAddress))
                         {
                         if (m.Groups[1].Success)
                             {
-                            streetNumber = int.Parse(m.Groups[1].Value);
+                            serviceStreetNumber = int.Parse(m.Groups[1].Value);
                             }
                         if (m.Groups[2].Success)
                             {
-                            streetName = m.Groups[2].Value;
+                            serviceStreetName = m.Groups[2].Value;
                             }
                         if (m.Groups[3].Success)
                             {
-                            unitNumber = m.Groups[3].Value;
+                            serviceUnitNumber = m.Groups[3].Value;
                             }
-                        zipCode = commercialAccountRow.ServiceZipCode;
+                        serviceZipCode = commercialAccountRow.ServiceZipCode;
                         }
+                    WRMLogger.LogBuilder.AppendLine("Service Address " + serviceStreetNumber + " " + serviceStreetName + " " + serviceZipCode);
                     }
-                WRMLogger.LogBuilder.AppendLine("Street " + streetNumber + " " + streetName + " " + unitNumber); 
+                if (String.IsNullOrEmpty(billingStreetName) && String.IsNullOrEmpty(serviceStreetName))
+                    { 
+                    throw new WRMNullValueException("A row has no address listed");
+                    }
+                if (String.IsNullOrEmpty(serviceStreetName))
+                    {
+                    serviceStreetNumber = commercialAccount.CommercialStreetNumber ?? 0;
+                    serviceStreetName = commercialAccount.CommercialStreetName;
+                    serviceUnitNumber = commercialAccount.CommercialUnitNumber;
+                    serviceZipCode = commercialAccount.CommercialZipCode;
+                    }
+                // if service address is not filled in then use the billing address ?
+                WRMLogger.LogBuilder.AppendLine("Address table " + serviceStreetNumber + " " + serviceStreetName + " " + serviceUnitNumber); 
                 WRMLogger.Logger.log();
                 Address address = new Address();
                 int foundAddressId = 0;
                 int addressId = 0;
                 Address foundAddress = new Address();
-                string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(streetName, streetNumber, unitNumber, zipCode);
+                string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(serviceStreetName, serviceStreetNumber, serviceUnitNumber, serviceZipCode);
                 // if address exists then use the address to create or update a new commercial account
                 if (AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
                     {
                     addressId = foundAddressId;
-                    address = AddressPopulation.AddressDictionary.GetValueOrDefault(dictionaryKey, null);
+                    address = AddressPopulation.AddressDictionary[dictionaryKey];
                     address.AddressType = "COMMERCIAL";
                     if (!String.IsNullOrEmpty(recyclingServiceDay))
                         {
-                        address.RecycleDayOfWeek = recyclingServiceDay;
+                        if (validateDayOfWeek(recyclingServiceDay))
+                            {
+                            address.RecycleDayOfWeek = recyclingServiceDay;
+                            }
+                        else
+                            {
+                            recyclingServiceDay = null;
+                            }
                         }
                     if (!String.IsNullOrEmpty(recyclingServiceWeek))
                         {
-                        address.RecycleFrequency = recyclingServiceWeek;
+                        if (validateRecycleFrequency (recyclingServiceWeek))
+                            {
+                            address.RecycleFrequency = recyclingServiceWeek;
+                            }
+                        else
+                            {
+                            recyclingServiceWeek = null;
+                            }
                         }
                     if (!String.IsNullOrEmpty(trashServiceDay))
                         {
-                        address.TrashDayOfWeek = trashServiceDay;
+                        if (validateDayOfWeek(trashServiceDay))
+                            {
+                            address.TrashDayOfWeek = trashServiceDay;
+                            }
+                        else
+                            {
+                            address.AlternateSchedule = serviceDaysWeeks;
+                            trashServiceDay = null;
+                            }
                         }
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(address);
 
@@ -291,13 +333,13 @@ namespace WRM_TrashRecyclePopulation
                 else
                 // if address does not exist then create one.  
                     {
-                    address.StreetNumber = streetNumber;
+                    address.StreetNumber = serviceStreetNumber;
 
-                    address.StreetName = streetName;
+                    address.StreetName = serviceStreetName;
 
-                    address.UnitNumber = unitNumber;
+                    address.UnitNumber = serviceUnitNumber;
 
-                    address.ZipCode = zipCode;
+                    address.ZipCode = serviceZipCode;
                     try
                         {
                         AddressPopulation.populateAddressFromKGIS(ref address);
@@ -308,21 +350,59 @@ namespace WRM_TrashRecyclePopulation
                         }
                     address.AddressType = "COMMERCIAL";
                     if (!String.IsNullOrEmpty(recyclingServiceDay))
+                        if (validateDayOfWeek(recyclingServiceDay))
                         {
                         address.RecycleDayOfWeek = recyclingServiceDay;
                         }
+                        else
+                            {
+                            recyclingServiceDay = null;
+                            }
                     if (!String.IsNullOrEmpty(recyclingServiceWeek))
                         {
-                        address.RecycleFrequency = recyclingServiceWeek;
+                        if (validateRecycleFrequency(recyclingServiceWeek))
+                            {
+                            address.RecycleFrequency = recyclingServiceWeek;
+                            }
+                        else
+                            {
+                            recyclingServiceWeek = null;
+
+                            }
                         }
                     if (!String.IsNullOrEmpty(trashServiceDay))
                         {
-                        address.TrashDayOfWeek = trashServiceDay;
+                        if (validateDayOfWeek(trashServiceDay))
+                            {
+                            address.TrashDayOfWeek = trashServiceDay;
+                            }
+                        else
+                            {
+                            address.AlternateSchedule = serviceDaysWeeks;
+                            trashServiceDay = null;
+                            }
                         }
-                    WRMLogger.LogBuilder.AppendLine("Recycling Day Week =" + address.RecycleDayOfWeek + "/" + address.RecycleDayOfWeek + "- Trash Day =" + address.TrashDayOfWeek + "-");
+                    if (!String.IsNullOrEmpty(addressAlternateSchedule))
+                        {
+                        address.AlternateSchedule = addressAlternateSchedule;
+                        }
+                    WRMLogger.LogBuilder.AppendLine("Address table update Recycling Day Week =" + address.RecycleDayOfWeek + "/" + address.RecycleDayOfWeek + "- Trash Day =" + address.TrashDayOfWeek + "-");
 
                     address.NumberUnits = "1";
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
+
+                    if (String.IsNullOrEmpty(recyclingServiceDay))
+                        {
+                       WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Entry<Address>(address).Property("RecycleDayOfWeek").IsModified = false;
+                        }
+                    if (String.IsNullOrEmpty(recyclingServiceWeek))
+                        {
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Entry<Address>(address).Property("RecycleFrequency").IsModified = false;
+                        }
+                    if (String.IsNullOrEmpty(trashServiceDay))
+                        {
+                        WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Entry<Address>(address).Property("TrashDayOfWeek").IsModified = false;
+                        }
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();

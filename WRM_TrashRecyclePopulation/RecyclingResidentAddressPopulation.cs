@@ -256,7 +256,10 @@ namespace WRM_TrashRecyclePopulation
                 // How does foundAddress.CreateDate equal address.CreateDate on first run?
 
                 // add back String.IsNullOrEmpty(foundAddress.RecyclingStatus) ||
-
+                if (!String.IsNullOrEmpty(request.Comments))
+                    {
+                    foundAddress.Comment = foundAddress.Comment + request.Comments;
+                    }
                 if ( String.IsNullOrEmpty(foundAddress.RecyclingStatus) ||
                     (((request.LastUpdatedDate ?? Program.posixEpoche) > (foundAddress.UpdateDate ?? Program.posixEpoche)) ||
                     (((request.LastUpdatedDate ?? Program.posixEpoche) == (foundAddress.UpdateDate ?? Program.posixEpoche))
@@ -315,6 +318,10 @@ namespace WRM_TrashRecyclePopulation
                             }
                         
                         address.TrashStatus = "ELIGIBLE";
+                        if (!String.IsNullOrEmpty(request.Comments))
+                            {
+                            foundAddress.Comment = request.Comments;
+                            }
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
                         RecyclingResidentAddressDictionary[dictionaryKey] = address;
                         }

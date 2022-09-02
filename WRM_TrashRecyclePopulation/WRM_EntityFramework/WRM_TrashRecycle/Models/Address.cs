@@ -62,9 +62,6 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         [StringLength(10)]
         [Unicode(false)]
         public string RecycleFrequency { get; set; }
-        [StringLength(512)]
-        [Unicode(false)]
-        public string RecyclingComment { get; set; }
         [StringLength(10)]
         [Unicode(false)]
         public string TrashDayOfWeek { get; set; }
@@ -81,9 +78,6 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         public decimal? GISLongitude { get; set; }
         [StringLength(512)]
         [Unicode(false)]
-        public string BillingNote { get; set; }
-        [StringLength(512)]
-        [Unicode(false)]
         public string Comment { get; set; }
         [StringLength(100)]
         [Unicode(false)]
@@ -95,6 +89,12 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models
         public string UpdateUser { get; set; }
         [Column(TypeName = "datetime")]
         public DateTime? UpdateDate { get; set; }
+        [StringLength(100)]
+        [Unicode(false)]
+        public string AlternateSchedule { get; set; }
+        [StringLength(32)]
+        [Unicode(false)]
+        public string BatchLoadGUID { get; set; }
 
         [InverseProperty("Address")]
         public virtual ICollection<BackDoorPickup> BackDoorPickup { get; set; }

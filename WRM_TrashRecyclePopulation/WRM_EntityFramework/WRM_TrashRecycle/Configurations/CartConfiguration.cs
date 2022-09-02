@@ -21,18 +21,10 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
 
             entity.Property(e => e.CompositeCartKey).HasComputedColumnSql("(concat([CartSerialNumber],[AddressID],[CartType]))", false);
 
-            entity.Property(e => e.CreateDate).HasDefaultValueSql("(getdate())");
-
-            entity.Property(e => e.CreateUser).HasDefaultValueSql("(user_name())");
-
-            entity.Property(e => e.UpdateDate).HasDefaultValueSql("(getdate())");
-
-            entity.Property(e => e.UpdateUser).HasDefaultValueSql("(user_name())");
-
             entity.HasOne(d => d.Address)
                 .WithMany(p => p.Cart)
                 .HasForeignKey(d => d.AddressID)
-                .HasConstraintName("FK__Cart__AddressID__5812160E");
+                .HasConstraintName("FK__Cart__AddressID__4CA06362");
 
             OnConfigurePartial(entity);
         }

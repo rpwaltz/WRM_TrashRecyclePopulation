@@ -13,14 +13,6 @@ namespace WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Config
     {
         public void Configure(EntityTypeBuilder<Resident> entity)
         {
-            entity.Property(e => e.CreateDate).HasDefaultValueSql("(getdate())");
-
-            entity.Property(e => e.CreateUser).HasDefaultValueSql("(user_name())");
-
-            entity.Property(e => e.UpdateDate).HasDefaultValueSql("(getdate())");
-
-            entity.Property(e => e.UpdateUser).HasDefaultValueSql("(user_name())");
-
             entity.HasOne(d => d.Address)
                 .WithMany(p => p.Resident)
                 .HasForeignKey(d => d.AddressID)

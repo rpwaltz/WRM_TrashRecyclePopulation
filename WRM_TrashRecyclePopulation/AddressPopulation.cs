@@ -435,7 +435,7 @@ namespace WRM_TrashRecyclePopulation
             return addressType;
             }
 
-        private Boolean validateDayOfWeek(string dayOfWeek)
+        public static Boolean validateDayOfWeek(string dayOfWeek)
             {
             Boolean validated = false;
             switch (dayOfWeek.ToUpper())
@@ -454,7 +454,7 @@ namespace WRM_TrashRecyclePopulation
             return validated;
 
             }
-        private Boolean validateRecycleFrequency(string frequency)
+        public static Boolean validateRecycleFrequency(string frequency)
             {
             Boolean validated = false;
             switch (frequency)

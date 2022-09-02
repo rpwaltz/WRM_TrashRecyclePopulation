@@ -52,15 +52,18 @@ namespace WRM_TrashRecyclePopulation
                 WRM_TrashRecycle wrmTrashRecycleContext = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext;
                 using (wrmTrashRecycleContext)
                     {
-                    CommercialAccountPopulation commercialAccountPopulation = new CommercialAccountPopulation();
-                    commercialAccountPopulation.populateCommercialAccounts();
-/*                    AddressPopulation addressPopulation = new AddressPopulation();
+
+                    AddressPopulation addressPopulation = new AddressPopulation();
                     addressPopulation.populateAddresses();
 
                     CartPopulation cartPopulation = new CartPopulation();
                     cartPopulation.populateCarts();
+ 
+                    CommercialAccountPopulation commercialAccountPopulation = new CommercialAccountPopulation();
+                    commercialAccountPopulation.populateCommercialAccounts();
 
                     SolidWaste solidWasteContext = WRM_EntityFrameworkContextCache.SolidWasteContext;
+
                     using (solidWasteContext)
                         {
                         RecyclingResidentAddressPopulation recyclingAddressCustomerPopulation = new RecyclingResidentAddressPopulation();
@@ -70,7 +73,7 @@ namespace WRM_TrashRecyclePopulation
                         BackdoorServiceResidentAddressPopulation backdoorServiceResidentAddressPopulation = new BackdoorServiceResidentAddressPopulation();
                         backdoorServiceResidentAddressPopulation.populateBackDoorPickup();
                         }
-                */
+                
                     }
 
                 }
