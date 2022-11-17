@@ -113,6 +113,8 @@ namespace WRM_TrashRecyclePopulation
                     {
                     string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(address.StreetName, address.StreetNumber, address.UnitNumber, address.ZipCode);
                     AddressPopulation.AddressIdentiferDictionary[dictionaryKey] = address.AddressID;
+                    AddressPopulation.ReverseAddressIdentiferDictionary[address.AddressID] = dictionaryKey;
+                    AddressPopulation.AddressDictionary[dictionaryKey] = address;
                     // WRMLogger.LogBuilder.AppendLine(dictionaryKey + " = " + address.AddressID);
                     // AddressPopulation.ReverseAddressIdentiferDictionary[address.AddressID] = dictionaryKey;
                     }
@@ -320,7 +322,7 @@ namespace WRM_TrashRecyclePopulation
                         address.TrashStatus = "ELIGIBLE";
                         if (!String.IsNullOrEmpty(request.Comments))
                             {
-                            foundAddress.Comment = request.Comments;
+                            address.Comment = request.Comments;
                             }
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);
                         RecyclingResidentAddressDictionary[dictionaryKey] = address;
@@ -416,9 +418,10 @@ namespace WRM_TrashRecyclePopulation
                 if (AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
                     {
                     resident.AddressID = foundAddressId;
-                    ResidentAddressPopulation.ResidentDictionary.Add(dictionaryKey, resident);
+                    
                     // WRMLogger.LogBuilder.AppendLine("Resident added at " + dictionaryKey);
-                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(ResidentAddressPopulation.ResidentDictionary[dictionaryKey]);
+                    WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(resident);
+                    ResidentAddressPopulation.ResidentDictionary.Add(dictionaryKey, resident);
                     isAdded = true;
                     }
                 else
