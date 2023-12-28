@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using OfficeOpenXml;
+using System.Configuration;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
 
 namespace WRM_TrashRecyclePopulation
@@ -20,7 +21,7 @@ namespace WRM_TrashRecyclePopulation
         private ExcelWorksheet recycleServiceDayWorksheet = null;
         public ExcelWorksheet RecycleServiceDayWorksheet { get => recycleServiceDayWorksheet; set => recycleServiceDayWorksheet = value; }
 
-        private string xlsxServiceDayTrashAndRecyclingPath = @"C:\Users\rwaltz\Documents\SolidWaste\Service_Day_Trash_and_Recycling.xlsx";
+        private string xlsxServiceDayTrashAndRecyclingPath = ConfigurationManager.AppSettings["Service_Day_Trash_and_Recycling_Spreadsheet"].ToString() ;
 
         ExcelPackage package;
 
@@ -53,7 +54,7 @@ namespace WRM_TrashRecyclePopulation
             trashSheet = TrashServiceDayWorksheet;
             var recyclingSheet = package.Workbook.Worksheets.Add("Recycling");
             recyclingSheet = RecycleServiceDayWorksheet; */
-            package.SaveAs(@"C:\Users\rwaltz\Documents\SolidWaste\Service_Day_Trash_and_Recycling_WithErrors.xlsx");
+            package.SaveAs(ConfigurationManager.AppSettings["Service_Day_Trash_and_Recycling_Spreadsheet_Errors"].ToString()) ; 
             }
 
         public Address createAddressFromServiceDayWorksheet(ExcelWorksheet worksheet, int row)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using OfficeOpenXml;
+using System.Configuration;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
 
 namespace WRM_TrashRecyclePopulation
@@ -20,7 +21,7 @@ namespace WRM_TrashRecyclePopulation
         private ExcelWorksheet terminatedCommercialAccountWorksheet = null;
         public ExcelWorksheet TerminatedCommercialAccountWorksheet { get => terminatedCommercialAccountWorksheet; set => terminatedCommercialAccountWorksheet = value; }
 
-        private string xlsxServiceDayTrashAndRecyclingPath = @"C:\Users\rwaltz\Documents\SolidWaste\Small_Commercial_Accounts.xlsx";
+        private string xlsxServiceDayTrashAndRecyclingPath = ConfigurationManager.AppSettings["Small_Commercial_Accounts_Spreadsheet"].ToString();
 
 
         private ExcelWorksheet downtownPickupCrewCommercialAccountWorksheet = null;

@@ -13,6 +13,8 @@ using WRM_TrashRecyclePopulation.WRM_EntityFramework.SolidWaste;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle;
 using System.Configuration;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
 namespace WRM_TrashRecyclePopulation
     {
 
@@ -29,8 +31,8 @@ namespace WRM_TrashRecyclePopulation
         public static string logLine;
         static void Main()
             {
-            WRMLogger.Logger = new WRMLogger(@"C:\Users\rwaltz\Documents\SolidWaste", "wrm_TrashRecycle.log");
-
+            WRMLogger.Logger = new WRMLogger(ConfigurationManager.AppSettings["LOGFILEPATH"].ToString(), ConfigurationManager.AppSettings["LOGFILENAME"].ToString());
+            
             DateTime startTime = DateTime.Now;
 
 
@@ -52,7 +54,7 @@ namespace WRM_TrashRecyclePopulation
                 WRM_TrashRecycle wrmTrashRecycleContext = WRM_EntityFrameworkContextCache.WrmTrashRecycleContext;
                 using (wrmTrashRecycleContext)
                     {
-
+                    // Populate all addresses in the database from Service Day Spreadsheet
                     AddressPopulation addressPopulation = new AddressPopulation();
                     addressPopulation.populateAddresses();
 

@@ -6,6 +6,8 @@ using System.IO;
 using OfficeOpenXml;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.WRM_TrashRecycle.Models;
 using System.Globalization;
+using System.ComponentModel;
+using System.Configuration;
 
 namespace WRM_TrashRecyclePopulation
     {
@@ -18,8 +20,9 @@ namespace WRM_TrashRecyclePopulation
 
         public List<string> ignoreCartDuringPopulation = new List<string>();
 
-        public static string xlsxSNMasterlistPath = @"C:\Users\rwaltz\Documents\SolidWaste\SN_MASTERLIST_Current.xlsx";
+        public static string xlsxSNMasterlistPath = ConfigurationManager.AppSettings["SN_Masterlist_Spreadsheet"].ToString();
 
+        public static string xlsxSNMasterlistPathWithErrors = ConfigurationManager.AppSettings["SN_Masterlist_Spreadsheet_WithErrors"].ToString();
         private int totalRowsWorksheet;
 
         ExcelPackage package;
@@ -88,7 +91,7 @@ namespace WRM_TrashRecyclePopulation
                 addCurrentTrashCarts();
                 WRMLogger.LogBuilder.AppendLine("addFirstRecyclingCarts");
                 addCurrentRecyclingCarts();
-                package.SaveAs(@"C:\Users\rwaltz\Documents\SolidWaste\SN_MASTERLIST_Current_WithErrors.xlsx");
+                package.SaveAs(xlsxSNMasterlistPathWithErrors);
 
                 justNow = DateTime.Now;
                 timeDiff = justNow - beforeNow;
@@ -115,6 +118,7 @@ namespace WRM_TrashRecyclePopulation
 
         public void addCurrentTrashCarts()
             {
+            
             try
                 {
                 List<String> updateDatabaseAddressList = new List<String>();
@@ -124,8 +128,8 @@ namespace WRM_TrashRecyclePopulation
                     {
                     if ((cartCount) > 0 && (cartCount % 1000 == 0))
                         {
-                        //WRMLogger.Logger.logMessageAndDeltaTime("addCurrentTrashCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        //WRMLogger.Logger.log();
+                        WRMLogger.Logger.logMessageAndDeltaTime("addCurrentTrashCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                         ++cartCount;
@@ -160,7 +164,7 @@ namespace WRM_TrashRecyclePopulation
                                     {
 
                                     package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 36].Value = "Current Cart Date recieved is invalid " + snSpreadsheetRow.CurrentTrashCartDeliveryDate;
-                                    // WRMLogger.LogBuilder.AppendLine("Current Cart Date recieved is invalid " + snSpreadsheetRow.CurrentTrashCartDeliveryDate);
+                                    WRMLogger.LogBuilder.AppendLine("Current Cart Date recieved is invalid " + snSpreadsheetRow.CurrentTrashCartDeliveryDate);
                                     }
                                 }
                             if (!String.IsNullOrEmpty(snSpreadsheetRow.SmallTrashCart) && snSpreadsheetRow.SmallTrashCart.Equals("1"))
@@ -209,6 +213,8 @@ namespace WRM_TrashRecyclePopulation
 
                         }
                     }
+
+               
                 int maxBeforeCommit = 0;
                 foreach (String addressDictionaryKey in updateDatabaseAddressList)
                     {
@@ -220,8 +226,8 @@ namespace WRM_TrashRecyclePopulation
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(AddressPopulation.AddressDictionary[addressDictionaryKey]);
                     maxBeforeCommit++;
                     }
-                // WRMLogger.Logger.logMessageAndDeltaTime("addCurrentTrashCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                // WRMLogger.Logger.log();
+                 WRMLogger.Logger.logMessageAndDeltaTime("addCurrentTrashCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                 WRMLogger.Logger.log();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
@@ -246,14 +252,14 @@ namespace WRM_TrashRecyclePopulation
             {
             try
                 {
-                // WRMLogger.Logger.logMessageAndDeltaTime("addFirstTrashCart Start ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                WRMLogger.Logger.logMessageAndDeltaTime("addFirstTrashCart Start ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 int cartCount = 0;
                 foreach (KeyValuePair<String, SNSpreadsheetRow> snSpreadSheetRowPair in snMasterDictionary.AsEnumerable<KeyValuePair<String, SNSpreadsheetRow>>())
                     {
                     if ((cartCount) > 0 && (cartCount % 1000 == 0))
                         {
-                        //WRMLogger.Logger.logMessageAndDeltaTime("addFirstTrashCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        //WRMLogger.Logger.log();
+                        WRMLogger.Logger.logMessageAndDeltaTime("addFirstTrashCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                         ++cartCount;
@@ -298,10 +304,16 @@ namespace WRM_TrashRecyclePopulation
                                 }
                             cart.AddressID = addressId;
                             cart.Note = snSpreadsheetRow.Notes;
-//                            cart.CreateDate = DateTime.Now;
-//                            cart.CreateUser = "TrashRecyclePopulation";
-//                            cart.UpdateDate = DateTime.Now;
-//                            cart.UpdateUser = "TrashRecyclePopulation";
+                            //                            cart.CreateDate = DateTime.Now;
+                            //                            cart.CreateUser = "TrashRecyclePopulation";
+                            //                            cart.UpdateDate = DateTime.Now;
+                            //                            cart.UpdateUser = "TrashRecyclePopulation";
+                            //  foreach (PropertyDescriptor descriptor in TypeDescriptor.GetProperties(cart))
+                            //      {
+                            //      string name = descriptor.Name;
+                            //      object value = descriptor.GetValue(cart);
+                            //      WRMLogger.LogBuilder.AppendLine("{"+ name + "}={"+ value +"}");
+                            //      }
                             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(cart);
                             ++cartCount;
                             }
@@ -313,8 +325,8 @@ namespace WRM_TrashRecyclePopulation
                         }
                     }
 
-                //WRMLogger.Logger.logMessageAndDeltaTime("addFirstTrashCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                //WRMLogger.Logger.log();
+                WRMLogger.Logger.logMessageAndDeltaTime("addFirstTrashCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                WRMLogger.Logger.log();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 deleteAllCartsFromContext();
@@ -346,8 +358,8 @@ namespace WRM_TrashRecyclePopulation
                     {
                     if ((cartCount) > 0 && (cartCount % 1000 == 0))
                         {
-                        // WRMLogger.Logger.logMessageAndDeltaTime("secondTrashCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        // WRMLogger.Logger.log();
+                        WRMLogger.Logger.logMessageAndDeltaTime("secondTrashCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                         ++cartCount;
@@ -406,8 +418,8 @@ namespace WRM_TrashRecyclePopulation
                         }
                     }
 
-                // WRMLogger.Logger.logMessageAndDeltaTime("secondFirstTrashCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                // WRMLogger.Logger.log();
+                WRMLogger.Logger.logMessageAndDeltaTime("secondFirstTrashCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                WRMLogger.Logger.log();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 deleteAllCartsFromContext();
@@ -438,8 +450,8 @@ namespace WRM_TrashRecyclePopulation
                     {
                     if ((cartCount) > 0 && (cartCount % 1000 == 0))
                         {
-                        // WRMLogger.Logger.logMessageAndDeltaTime("thirdTrashCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        // WRMLogger.Logger.log();
+                        WRMLogger.Logger.logMessageAndDeltaTime("thirdTrashCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                         ++cartCount;
@@ -498,8 +510,8 @@ namespace WRM_TrashRecyclePopulation
                         }
                     }
 
-                // WRMLogger.Logger.logMessageAndDeltaTime("thirdTrashCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                // WRMLogger.Logger.log();
+                WRMLogger.Logger.logMessageAndDeltaTime("thirdTrashCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                WRMLogger.Logger.log();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 deleteAllCartsFromContext();
@@ -530,8 +542,8 @@ namespace WRM_TrashRecyclePopulation
                     {
                     if ((cartCount) > 0 && (cartCount % 1000 == 0))
                         {
-                        // WRMLogger.Logger.logMessageAndDeltaTime("fourthTrashCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        // WRMLogger.Logger.log();
+                        WRMLogger.Logger.logMessageAndDeltaTime("fourthTrashCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                         ++cartCount;
@@ -590,8 +602,8 @@ namespace WRM_TrashRecyclePopulation
                         }
                     }
 
-                // WRMLogger.Logger.logMessageAndDeltaTime("thirdTrashCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                // WRMLogger.Logger.log();
+                WRMLogger.Logger.logMessageAndDeltaTime("thirdTrashCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                WRMLogger.Logger.log();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 deleteAllCartsFromContext();
@@ -622,8 +634,8 @@ namespace WRM_TrashRecyclePopulation
                     {
                     if ((cartCount) > 0 && (cartCount % 1000 == 0))
                         {
-                        // WRMLogger.Logger.logMessageAndDeltaTime("firstRecyclingCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        // WRMLogger.Logger.log();
+                        WRMLogger.Logger.logMessageAndDeltaTime("firstRecyclingCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                         ++cartCount;
@@ -677,8 +689,8 @@ namespace WRM_TrashRecyclePopulation
                         }
                     }
 
-                // WRMLogger.Logger.logMessageAndDeltaTime("firstRecycleCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                // WRMLogger.Logger.log();
+                WRMLogger.Logger.logMessageAndDeltaTime("firstRecycleCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                WRMLogger.Logger.log();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 deleteAllCartsFromContext();
@@ -709,8 +721,8 @@ namespace WRM_TrashRecyclePopulation
                     {
                     if ((cartCount) > 0 && (cartCount % 1000 == 0))
                         {
-                        // WRMLogger.Logger.logMessageAndDeltaTime("secondRecyclingCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        // WRMLogger.Logger.log();
+                        WRMLogger.Logger.logMessageAndDeltaTime("secondRecyclingCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                         ++cartCount;
@@ -764,8 +776,8 @@ namespace WRM_TrashRecyclePopulation
                         }
                     }
 
-               //  WRMLogger.Logger.logMessageAndDeltaTime("secondRecycleCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-               //  WRMLogger.Logger.log();
+               WRMLogger.Logger.logMessageAndDeltaTime("secondRecycleCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+               WRMLogger.Logger.log();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 deleteAllCartsFromContext();
@@ -796,8 +808,8 @@ namespace WRM_TrashRecyclePopulation
                     {
                     if ((cartCount) > 0 && (cartCount % 1000 == 0))
                         {
-                        // WRMLogger.Logger.logMessageAndDeltaTime("thirdRecyclingCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        // WRMLogger.Logger.log();
+                        WRMLogger.Logger.logMessageAndDeltaTime("thirdRecyclingCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                         ++cartCount;
@@ -851,8 +863,8 @@ namespace WRM_TrashRecyclePopulation
                         }
                     }
 
-                // WRMLogger.Logger.logMessageAndDeltaTime("thirdRecycleCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                // WRMLogger.Logger.log();
+                WRMLogger.Logger.logMessageAndDeltaTime("thirdRecycleCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                WRMLogger.Logger.log();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 deleteAllCartsFromContext();
@@ -884,8 +896,8 @@ namespace WRM_TrashRecyclePopulation
                     {
                     if ((cartCount) > 0 && (cartCount % 2000 == 0))
                         {
-                        // WRMLogger.Logger.logMessageAndDeltaTime("currentRecyclingCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                        // WRMLogger.Logger.log();
+                        WRMLogger.Logger.logMessageAndDeltaTime("currentRecyclingCart Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                        WRMLogger.Logger.log();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                         WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                         ++cartCount;
@@ -970,8 +982,8 @@ namespace WRM_TrashRecyclePopulation
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Update(AddressPopulation.AddressDictionary[addressDictionaryKey]);
                     maxBeforeCommit++;
                     }
-                // WRMLogger.Logger.logMessageAndDeltaTime("currentRecycleCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                // WRMLogger.Logger.log();
+                WRMLogger.Logger.logMessageAndDeltaTime("currentRecycleCart End Population " + cartCount, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+                WRMLogger.Logger.log();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
@@ -1123,9 +1135,9 @@ namespace WRM_TrashRecyclePopulation
                 */
                 justNow = DateTime.Now;
                 timeDiff = justNow - beforeNow;
-                // WRMLogger.LogBuilder.AppendLine("End Address Cart population " + maxToProcess + " " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
-                //                WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
-                // WRMLogger.Logger.log();
+                WRMLogger.LogBuilder.AppendLine("End Address Cart population " + maxToProcess + " " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
+               //                WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
+                WRMLogger.Logger.log();
                 }
             catch (Exception ex)
                 {
@@ -1183,7 +1195,7 @@ namespace WRM_TrashRecyclePopulation
                 }
             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(cart);
 
-            /*
+            /* the spreadsheet originally had two serial numbers at an address separated by a comma, Data was corrected
             if (serialNumber.Contains(","))
                 {
                 serialNumberList = new List<String>(serialNumber.Split(","));
@@ -1426,7 +1438,7 @@ namespace WRM_TrashRecyclePopulation
                                 snMasterDictionary[dictionaryKey].CurrentRecycleCartSN = "UNKNONW";
                                 }
                             package.Workbook.Worksheets[0].Cells[row, 38].Value = "Uhas Duplicate Address " + dictionaryKey;
-                            // WRMLogger.LogBuilder.AppendLine("Address already added " + dictionaryKey);
+                            WRMLogger.LogBuilder.AppendLine("Address already added " + dictionaryKey);
                             continue;
                             }
 
