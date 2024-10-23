@@ -29,15 +29,20 @@ namespace WRM_TrashRecyclePopulation
 
         public List<string> addedAddressesDuringPopulation = new List<string>();
 
+        /* 
+         * Pull all the records from the Serial Number Master Spreadsheet
+         * and populate the cart & address tables in the database
+         * 
+         */
         public CartPopulation()
             {
-
+            // open the spreadsheet
             xlsxSNMasterlistFileInfo = new FileInfo(xlsxSNMasterlistPath);
             if (!xlsxSNMasterlistFileInfo.Exists)
                 {
                 throw new Exception(xlsxSNMasterlistPath + "does not exist");
                 }
-
+            // read in the spreadsheet creating a few additional columns for error reporting
             package = new ExcelPackage(xlsxSNMasterlistFileInfo);
             package.Workbook.Worksheets[0].InsertColumn(35, 1);
             package.Workbook.Worksheets[0].Cells[1, 35].Value = "Found in KGIS";
@@ -58,9 +63,6 @@ namespace WRM_TrashRecyclePopulation
                 DateTime beforeNow = DateTime.Now;
                 DateTime justNow = DateTime.Now;
                 TimeSpan timeDiff = justNow - beforeNow;
-                double loopMillisecondsPast = 0;
-                String logLine;
-                int maxToProcess = 0;
 
                 // populate all the addresses that are new
                 WRMLogger.Logger.logMessageAndDeltaTime("populateSNMasterDictionary ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
@@ -68,9 +70,10 @@ namespace WRM_TrashRecyclePopulation
                 WRMLogger.Logger.logMessageAndDeltaTime("addOrUpdateAddressesFromSNMasterList ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 addOrUpdateAddressesFromSNMasterList();
 
+                // add the carts to the database in chronological order
                 WRMLogger.Logger.logMessageAndDeltaTime("addFirstTrashCarts ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 addFirstTrashCarts();
-
+                // carts that replace old carts are deleted and placed in the cart history table
                 WRMLogger.LogBuilder.AppendLine("addSecondTrashCarts");
                 addSecondTrashCarts();
 
@@ -91,6 +94,8 @@ namespace WRM_TrashRecyclePopulation
                 addCurrentTrashCarts();
                 WRMLogger.LogBuilder.AppendLine("addFirstRecyclingCarts");
                 addCurrentRecyclingCarts();
+                // the entire spreadsheet has been parsed
+                // print off the spreadsheet with the errors included for debugging
                 package.SaveAs(xlsxSNMasterlistPathWithErrors);
 
                 justNow = DateTime.Now;
@@ -143,7 +148,7 @@ namespace WRM_TrashRecyclePopulation
                             {
                             AddressPopulation.AddressDictionary[snSpreadSheetRowPair.Key].TrashStatus = "INELIGIBLE";
                             updateDatabaseAddressList.Add(snSpreadSheetRowPair.Key);
-                            package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 36].Value = "Trash Cart INELIGIBLE";
+                            //package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 36].Value = "Trash Cart INELIGIBLE";
                             continue;
                             }
                         if ((!String.IsNullOrEmpty(snSpreadsheetRow.CurrentTrashCartSN))
@@ -163,8 +168,8 @@ namespace WRM_TrashRecyclePopulation
                                 else
                                     {
 
-                                    package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 36].Value = "Current Cart Date recieved is invalid " + snSpreadsheetRow.CurrentTrashCartDeliveryDate;
-                                    WRMLogger.LogBuilder.AppendLine("Current Cart Date recieved is invalid " + snSpreadsheetRow.CurrentTrashCartDeliveryDate);
+                                    package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 36].Value = "Current Cart Date received is invalid " + snSpreadsheetRow.CurrentTrashCartDeliveryDate;
+                                    WRMLogger.LogBuilder.AppendLine("Current Cart Date received is invalid " + snSpreadsheetRow.CurrentTrashCartDeliveryDate);
                                     }
                                 }
                             if (!String.IsNullOrEmpty(snSpreadsheetRow.SmallTrashCart) && snSpreadsheetRow.SmallTrashCart.Equals("1"))
@@ -209,7 +214,7 @@ namespace WRM_TrashRecyclePopulation
                     catch (Exception ex) when (ex is WRMWithdrawnStatusException || ex is WRMNotSupportedException || ex is WRMNullValueException)
                         {
                         package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 36].Value = ex.Message;
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Current Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C15: Current Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
 
                         }
                     }
@@ -280,7 +285,8 @@ namespace WRM_TrashRecyclePopulation
                                     }
                                 else
                                     {
-                                    WRMLogger.LogBuilder.AppendLine("First Trash Cart Date recieved is invalid " + snSpreadsheetRow.FirstTrashCartDeliveryDate);
+                                    package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 36].Value = "Second Trash Cart Date received is invalid " + snSpreadsheetRow.FirstTrashCartDeliveryDate;
+                                    WRMLogger.LogBuilder.AppendLine("First Trash Cart Date received is invalid " + snSpreadsheetRow.FirstTrashCartDeliveryDate);
                                     }
                                 }
                             if (!String.IsNullOrEmpty(snSpreadsheetRow.SmallTrashCart) && snSpreadsheetRow.SmallTrashCart.Equals("1"))
@@ -320,7 +326,7 @@ namespace WRM_TrashRecyclePopulation
                         }
                     catch (WRMNullValueException ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: First Trash Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C1: First Trash Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
 
                         }
                     }
@@ -380,7 +386,8 @@ namespace WRM_TrashRecyclePopulation
                                     }
                                 else
                                     {
-                                    WRMLogger.LogBuilder.AppendLine("Second Trash Cart Date recieved is invalid " + snSpreadsheetRow.SecondTrashCartDeliveryDate);
+                                    WRMLogger.LogBuilder.AppendLine("Second Trash Cart Date received is invalid " + snSpreadsheetRow.SecondTrashCartDeliveryDate);
+                                    package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 36].Value = "Second Trash Cart Date received is invalid " + snSpreadsheetRow.SecondTrashCartDeliveryDate;
                                     }
                                 }
                             if (!String.IsNullOrEmpty(snSpreadsheetRow.SmallTrashCart) && snSpreadsheetRow.SmallTrashCart.Equals("1"))
@@ -413,7 +420,7 @@ namespace WRM_TrashRecyclePopulation
                         }
                     catch (WRMNullValueException ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Second Trash Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C12: Second Trash Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
 
                         }
                     }
@@ -472,7 +479,8 @@ namespace WRM_TrashRecyclePopulation
                                     }
                                 else
                                     {
-                                    WRMLogger.LogBuilder.AppendLine("Third Trash Cart Date recieved is invalid " + snSpreadsheetRow.ThirdTrashCartDeliveryDate);
+                                    WRMLogger.LogBuilder.AppendLine("Third Trash Cart Date received is invalid " + snSpreadsheetRow.ThirdTrashCartDeliveryDate);
+                                    package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 36].Value = "Third Trash Cart Date received is invalid " + snSpreadsheetRow.ThirdTrashCartDeliveryDate;
                                     }
                                 }
                             if (!String.IsNullOrEmpty(snSpreadsheetRow.SmallTrashCart) && snSpreadsheetRow.SmallTrashCart.Equals("1"))
@@ -505,7 +513,7 @@ namespace WRM_TrashRecyclePopulation
                         }
                     catch (WRMNullValueException ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Third Trash Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C3: Third Trash Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
 
                         }
                     }
@@ -564,7 +572,8 @@ namespace WRM_TrashRecyclePopulation
                                     }
                                 else
                                     {
-                                    WRMLogger.LogBuilder.AppendLine("Fourth Trash Cart Date recieved is invalid " + snSpreadsheetRow.ThirdTrashCartDeliveryDate);
+                                    WRMLogger.LogBuilder.AppendLine("Fourth Trash Cart Date received is invalid " + snSpreadsheetRow.FourthTrashCartDeliveryDate);
+                                    package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 36].Value = "Fourth Trash Cart Date received is invalid " + snSpreadsheetRow.FourthTrashCartDeliveryDate;
                                     }
                                 }
                             if (!String.IsNullOrEmpty(snSpreadsheetRow.SmallTrashCart) && snSpreadsheetRow.SmallTrashCart.Equals("1"))
@@ -583,7 +592,7 @@ namespace WRM_TrashRecyclePopulation
 
                             if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(addressKey, out addressId))
                                 {
-                                throw new WRMNullValueException("Third Trash Cart Address cannot be found in AddressIdentiferDictionary " + addressKey);
+                                throw new WRMNullValueException("Fourth Trash Cart Address cannot be found in AddressIdentiferDictionary " + addressKey);
                                 }
                             cart.AddressID = addressId;
                             cart.Note = snSpreadsheetRow.Notes;
@@ -597,7 +606,7 @@ namespace WRM_TrashRecyclePopulation
                         }
                     catch (WRMNullValueException ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Third Trash Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C4: Third Trash Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
 
                         }
                     }
@@ -656,7 +665,8 @@ namespace WRM_TrashRecyclePopulation
                                     }
                                 else
                                     {
-                                    WRMLogger.LogBuilder.AppendLine("First Recycling Cart Date recieved is invalid " + snSpreadsheetRow.FirstRecycleCartDeliveryDate);
+                                    WRMLogger.LogBuilder.AppendLine("First Recycling Cart Date received is invalid " + snSpreadsheetRow.FirstRecycleCartDeliveryDate);
+                                    package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 37].Value = "First Recycling Cart Date received is invalid " + snSpreadsheetRow.FirstRecycleCartDeliveryDate;
                                     }
                                 }
 
@@ -684,7 +694,7 @@ namespace WRM_TrashRecyclePopulation
                         }
                     catch (WRMNullValueException ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: First Recycling Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C5: First Recycling Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
 
                         }
                     }
@@ -743,7 +753,8 @@ namespace WRM_TrashRecyclePopulation
                                     }
                                 else
                                     {
-                                    WRMLogger.LogBuilder.AppendLine("Second Recycling Cart Date recieved is invalid " + snSpreadsheetRow.SecondRecycleCartDeliveryDate);
+                                    WRMLogger.LogBuilder.AppendLine("Second Recycling Cart Date received is invalid " + snSpreadsheetRow.SecondRecycleCartDeliveryDate);
+                                    package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 37].Value = "Second Recycling Cart Date received is invalid " + snSpreadsheetRow.SecondRecycleCartDeliveryDate;
                                     }
                                 }
 
@@ -771,7 +782,7 @@ namespace WRM_TrashRecyclePopulation
                         }
                     catch (WRMNullValueException ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Second Recycling Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C6: Second Recycling Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
 
                         }
                     }
@@ -830,7 +841,8 @@ namespace WRM_TrashRecyclePopulation
                                     }
                                 else
                                     {
-                                    WRMLogger.LogBuilder.AppendLine("Second Recycling Cart Date recieved is invalid " + snSpreadsheetRow.ThirdRecycleCartDeliveryDate);
+                                    WRMLogger.LogBuilder.AppendLine("Third Recycling Cart Date received is invalid " + snSpreadsheetRow.ThirdRecycleCartDeliveryDate);
+                                    package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 37].Value = "Third Recycling Cart Date received is invalid " + snSpreadsheetRow.ThirdRecycleCartDeliveryDate;
                                     }
                                 }
 
@@ -858,7 +870,7 @@ namespace WRM_TrashRecyclePopulation
                         }
                     catch (WRMNullValueException ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Third Recycling Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C7: Third Recycling Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
 
                         }
                     }
@@ -912,7 +924,7 @@ namespace WRM_TrashRecyclePopulation
                             {
                             AddressPopulation.AddressDictionary[snSpreadSheetRowPair.Key].RecyclingStatus = "NOT RECYCLING";
                             updateDatabaseAddressList.Add(snSpreadSheetRowPair.Key);
-                            package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 37].Value = "Recycling Cart INELIGIBLE";
+                            // package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 37].Value = "Recycling Cart INELIGIBLE";
                             continue;
                             }
                         if (!String.IsNullOrEmpty(snSpreadsheetRow.CurrentRecycleCartSN))
@@ -967,7 +979,7 @@ namespace WRM_TrashRecyclePopulation
                     catch (Exception ex) when (ex is WRMWithdrawnStatusException || ex is WRMNotSupportedException || ex is WRMNullValueException)
                         {
                         package.Workbook.Worksheets[0].Cells[snSpreadsheetRow.RowNumber, 37].Value = ex.Message;
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Current Recycling Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C8: Current Recycling Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
 
                         }
                     }
@@ -1012,8 +1024,7 @@ namespace WRM_TrashRecyclePopulation
                 DateTime beforeNow = DateTime.Now;
                 DateTime justNow = DateTime.Now;
                 TimeSpan timeDiff = justNow - beforeNow;
-                double loopMillisecondsPast = 0;
-                String logLine;
+
                 int maxToProcess = 0;
 
                 // populate all the addresses that are new
@@ -1091,17 +1102,17 @@ namespace WRM_TrashRecyclePopulation
                         }
                     catch (WRMNullValueException ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C9: Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
 
                         }
                     catch (WRMNotSupportedException ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C10: Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
 
                         }
                     catch (Exception ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C11: Cart Population At row " + snSpreadsheetRow.RowNumber + " " + ex.Message);
                         throw ex;
                         }
 
@@ -1126,17 +1137,11 @@ namespace WRM_TrashRecyclePopulation
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                /*
-                foreach (CommercialAccount commercialAccount in WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.CommercialAccount.ToList())
-                    {
-                    CommercialAccountPopulation.CommercialAccountDictionary.Add(commercialAccount.AddressID, commercialAccount);
-                    CommercialAccountPopulation.CommercialAccountList.Add(commercialAccount);
-                    }
-                */
+
                 justNow = DateTime.Now;
                 timeDiff = justNow - beforeNow;
                 WRMLogger.LogBuilder.AppendLine("End Address Cart population " + maxToProcess + " " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
-               //                WRMLogger.Logger.logMessageAndDeltaTime(logLine, ref beforeNow, ref justNow, ref loopMillisecondsPast);
+
                 WRMLogger.Logger.log();
                 }
             catch (Exception ex)
@@ -1195,42 +1200,6 @@ namespace WRM_TrashRecyclePopulation
                 }
             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(cart);
 
-            /* the spreadsheet originally had two serial numbers at an address separated by a comma, Data was corrected
-            if (serialNumber.Contains(","))
-                {
-                serialNumberList = new List<String>(serialNumber.Split(","));
-                }
-
-            if (serialNumberList == null)
-                {
-                wrmTrashRecycleContext.Add(cart);
-                // logBuilder.AppendLine("Add " + request.StreetNumber + "  " + request.StreetName);
-                wrmTrashRecycleContext.SaveChanges();
-                wrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                }
-            else
-                {
-                foreach (string serialNumberNew in serialNumberList)
-                    {
-                    Cart additionalCart = new Cart();
-                    additionalCart.AddressID = cart.AddressID;
-                    additionalCart.CartSerialNumber = serialNumberNew;
-                    additionalCart.CartStatus = cart.CartStatus;
-                    additionalCart.CreateDate = cart.CreateDate;
-                    additionalCart.CreateUser = cart.CreateUser;
-                    additionalCart.IsRecyclingCart = cart.IsRecyclingCart;
-                    additionalCart.Note = cart.Note;
-                    additionalCart.CartSize = cart.CartSize;
-                    additionalCart.SerialNumberReceivedDate = cart.SerialNumberReceivedDate;
-
-                    wrmTrashRecycleContext.Add(additionalCart);
-                    // logBuilder.AppendLine("Add " + request.StreetNumber + "  " + request.StreetName);
-                    wrmTrashRecycleContext.SaveChanges();
-                    wrmTrashRecycleContext.ChangeTracker.DetectChanges();
-                    }
-
-                }
-            */
             return cart;
             }
         private void deleteAllCartsFromContext()
@@ -1264,13 +1233,12 @@ namespace WRM_TrashRecyclePopulation
                 maxBeforeCommit++;
                 }
 
-
             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
-            // WRMLogger.Logger.logMessageAndDeltaTime("End deleteAllCartsFromContext ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+
             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.ChangeTracker.DetectChanges();
             WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Cart.ToList().Clear();
-            // WRMLogger.Logger.logMessageAndDeltaTime("Clear deleteAllCartsFromContext ", ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
+
             }
 
         private string getAddressTypeFromWorksheet(int row)
@@ -1350,11 +1318,6 @@ namespace WRM_TrashRecyclePopulation
                 {
                 throw new WRMNullValueException("Zip Code value for cart at row " + row + " empty");
                 }
-
-//            address.CreateDate = DateTime.Now;
-//            address.CreateUser = "TrashRecyclePopulation";
-//            address.UpdateDate = DateTime.Now;
-//            address.UpdateUser = "TrashRecyclePopulation";
 
             if (AddressPopulation.populateAddressFromKGIS(ref address))
                 {
@@ -1438,7 +1401,7 @@ namespace WRM_TrashRecyclePopulation
                                 snMasterDictionary[dictionaryKey].CurrentRecycleCartSN = "UNKNONW";
                                 }
                             package.Workbook.Worksheets[0].Cells[row, 38].Value = "Uhas Duplicate Address " + dictionaryKey;
-                            WRMLogger.LogBuilder.AppendLine("Address already added " + dictionaryKey);
+                            //WRMLogger.LogBuilder.AppendLine("Address already added " + dictionaryKey);
                             continue;
                             }
 
@@ -1537,7 +1500,7 @@ namespace WRM_TrashRecyclePopulation
                         }
                     catch (WRMNullValueException ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + row + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C12: Cart Population At row " + row + " " + ex.Message);
                         package.Workbook.Worksheets[0].Cells[row, 38].Value = ex.Message;
                         package.Workbook.Worksheets[0].Cells[row, 35].Value = "False";
 
@@ -1546,7 +1509,7 @@ namespace WRM_TrashRecyclePopulation
                         {
                         package.Workbook.Worksheets[0].Cells[row, 38].Value = ex.Message;
                         package.Workbook.Worksheets[0].Cells[row, 35].Value = "True";
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Cart Population At row " + row + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR C13: Cart Population At row " + row + " " + ex.Message);
 
                         }
 

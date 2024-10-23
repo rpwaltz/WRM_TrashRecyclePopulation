@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using WRM_TrashRecyclePopulation.WRM_EntityFramework.SolidWaste;
@@ -60,9 +61,9 @@ namespace WRM_TrashRecyclePopulation
                 WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.SaveChanges(true);
 
 
-               Program.logLine = "Adding Recycling Addresses: " + numberRequestsUpdates;
+               /* Program.logLine = "Adding Recycling Request Addresses: " + numberRequestsUpdates;
                 WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
-                WRMLogger.Logger.log();
+                WRMLogger.Logger.log(); */
  
                 foreach (Address address in WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Address.ToList())
                     {
@@ -284,7 +285,7 @@ namespace WRM_TrashRecyclePopulation
                     }
                 else
                     {
-                    WRMLogger.LogBuilder.AppendLine("Skip exising Recycling Request at " + dictionaryKey +
+                    WRMLogger.LogBuilder.AppendLine("Skip existing Recycling Request at  [" + streetNumber + " " + streetName + " " + unitNumber + " " + zipCode + "]" +
                         System.Environment.NewLine + "Request Recycling Status " + status +
                         System.Environment.NewLine + "Found Address Recycling Status " + foundAddress.RecyclingStatus +
                         System.Environment.NewLine + "Request Update Date " + request.LastUpdatedDate.ToString() +
@@ -332,13 +333,13 @@ namespace WRM_TrashRecyclePopulation
                     }
                 else
                     {
-                    WRMLogger.LogBuilder.AppendLine("No address found for Recycling Request at " + dictionaryKey);
+                    WRMLogger.LogBuilder.AppendLine("No address found for Recycling Request at [" + streetNumber + " " + streetName + " " + unitNumber + " " + zipCode + "]");
                     }
 
                 }
             else
                 {
-                WRMLogger.LogBuilder.AppendLine("Bad Recycling Request at " + dictionaryKey);
+                WRMLogger.LogBuilder.AppendLine("Bad Recycling Request at [" + streetNumber + " " + streetName + " " + unitNumber + " " + zipCode + "]");
                 }
             return isAdded;
             }
@@ -425,26 +426,25 @@ namespace WRM_TrashRecyclePopulation
                     isAdded = true;
                     }
                 else
-                    {
-                    throw new WRMNullValueException("Address Id is not found for new resident at " + dictionaryKey);
-                    }
-                }
-            else
                 {
-                WRMLogger.LogBuilder.AppendLine("Resident already exists at " + dictionaryKey);
+                    throw new WRMNullValueException("Recycling Request Address is not found for new resident at [" + streetNumber + " " + streetName + " " + unitNumber + " " + zipCode + "]" );
+                    }
+            }
+            else
+            {
+                //WRMLogger.LogBuilder.AppendLine("Resident already exists at " + dictionaryKey);
                 }
             return isAdded;
-            }
+        }
         public bool updateResidentFromRecycleRequest(RecyclingRequest request)
-            {
+        {
             bool isUpdated = false;
             string status = request.Status.Trim();
             status = translateAddressRecyclingStatus(status);
-
             if (status.Equals("NOT RECYCLING"))
-                {
+            {
                 return isUpdated;
-                }
+            }
 
             string streetName = request.StreetName;
             int streetNumber = request.StreetNumber ?? 0;

@@ -233,7 +233,7 @@ namespace WRM_TrashRecyclePopulation
                     {
                     recyclingServiceWeek = null;
                     }
-                WRMLogger.LogBuilder.AppendLine("Spreadsheet Recycling Day Week =" + recyclingServiceDay + "/" + recyclingServiceWeek + "- Trash Day =" + trashServiceDay + "-");
+                //WRMLogger.LogBuilder.AppendLine("Spreadsheet Recycling Day Week =" + recyclingServiceDay + "/" + recyclingServiceWeek + "- Trash Day =" + trashServiceDay + "-");
 
                 string fullBillingStreetAddress = commercialAccountRow.BillingStreetNumber;
                 int? billingStreetNumber = null;
@@ -261,7 +261,7 @@ namespace WRM_TrashRecyclePopulation
                 commercialAccount.CommercialStreetName = billingStreetName;
                 commercialAccount.CommercialUnitNumber = billingUnitNumber;
                 commercialAccount.CommercialZipCode = commercialAccountRow.BillingZipCode;
-                WRMLogger.LogBuilder.AppendLine("Billing Address " + billingStreetNumber + " " + billingStreetName + " " + billingUnitNumber);
+                // WRMLogger.LogBuilder.AppendLine("Billing Address " + billingStreetNumber + " " + billingStreetName + " " + billingUnitNumber);
 
                 if (!String.IsNullOrEmpty(commercialAccountRow.ServiceAddress))
                     {
@@ -282,7 +282,7 @@ namespace WRM_TrashRecyclePopulation
                             }
                         serviceZipCode = commercialAccountRow.ServiceZipCode;
                         }
-                    WRMLogger.LogBuilder.AppendLine("Service Address " + serviceStreetNumber + " " + serviceStreetName + " " + serviceZipCode);
+                    // WRMLogger.LogBuilder.AppendLine("Service Address " + serviceStreetNumber + " " + serviceStreetName + " " + serviceZipCode);
                     }
                 if (String.IsNullOrEmpty(billingStreetName) && String.IsNullOrEmpty(serviceStreetName))
                     {
@@ -296,7 +296,7 @@ namespace WRM_TrashRecyclePopulation
                     serviceZipCode = commercialAccount.CommercialZipCode;
                     }
                 // if service address is not filled in then use the billing address ?
-                WRMLogger.LogBuilder.AppendLine("Address table " + serviceStreetNumber + " " + serviceStreetName + " " + serviceUnitNumber);
+                // WRMLogger.LogBuilder.AppendLine("Address table " + serviceStreetNumber + " " + serviceStreetName + " " + serviceUnitNumber);
                 WRMLogger.Logger.log();
                 Address address = new Address();
                 int foundAddressId = 0;
@@ -362,7 +362,7 @@ namespace WRM_TrashRecyclePopulation
                         }
                     catch (Exception ex)
                         {
-                        WRMLogger.LogBuilder.AppendLine("ERROR: Ignoring error " + dictionaryKey + " " + ex.Message);
+                        WRMLogger.LogBuilder.AppendLine("ERROR M1: Ignoring error " + dictionaryKey + " " + ex.Message);
                         }
                     address.AddressType = "COMMERCIAL";
                     if (!String.IsNullOrEmpty(recyclingServiceDay))
@@ -402,7 +402,7 @@ namespace WRM_TrashRecyclePopulation
                         {
                         address.AlternateSchedule = addressAlternateSchedule;
                         }
-                    WRMLogger.LogBuilder.AppendLine("Address table update Recycling Day Week =" + address.RecycleDayOfWeek + "/" + address.RecycleDayOfWeek + "- Trash Day =" + address.TrashDayOfWeek + "-");
+                    //WRMLogger.LogBuilder.AppendLine("Address table update Recycling Day Week =" + address.RecycleDayOfWeek + "/" + address.RecycleDayOfWeek + "- Trash Day =" + address.TrashDayOfWeek + "-");
 
                     address.NumberUnits = "1";
                     WRM_EntityFrameworkContextCache.WrmTrashRecycleContext.Add(address);

@@ -22,16 +22,16 @@ namespace WRM_TrashRecyclePopulation
             {
             try
                 {
-                // Program.logLine = "Begin BackDoorPickup Requests";
+                Program.logLine = "Begin BackDoorPickup Requests";
                 // WRMLogger.Logger.logMessageAndDeltaTime(Program.logLine, ref Program.beforeNow, ref Program.justNow, ref Program.loopMillisecondsPast);
                 // WRMLogger.Logger.log();
 
                 int numberRequestsSaved = 0;
-                IEnumerable<BackdoorServiceRequest> orderedSolidWasteBackdorrRequestList = WRM_EntityFrameworkContextCache.SolidWasteContext.BackdoorServiceRequest.OrderBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.StreetName).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.StreetNumber).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.UnitNumber).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.BackdoorId).ToList();
+                IEnumerable<BackdoorServiceRequest> orderedSolidWasteBackdoorRequestList = WRM_EntityFrameworkContextCache.SolidWasteContext.BackdoorServiceRequest.OrderBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.StreetName).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.StreetNumber).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.UnitNumber).ThenBy(solidWasteBackdoorRequestList => solidWasteBackdoorRequestList.BackdoorId).ToList();
 
                 // Add new Residents
                 numberRequestsSaved = 0;
-                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdorrRequestList)
+                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdoorRequestList)
                     {
                     if ((numberRequestsSaved > 0) && (numberRequestsSaved % 1000 == 0))
                         {
@@ -67,7 +67,7 @@ namespace WRM_TrashRecyclePopulation
 
                 // Update Existing Residents
                 numberRequestsSaved = 0;
-                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdorrRequestList)
+                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdoorRequestList)
                     {
                     if ((numberRequestsSaved > 0) && (numberRequestsSaved % 1000 == 0))
                         {
@@ -98,7 +98,7 @@ namespace WRM_TrashRecyclePopulation
 
                 // Add new Backdoor entries
                 numberRequestsSaved = 0;
-                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdorrRequestList)
+                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdoorRequestList)
                     {
                     if ((numberRequestsSaved > 0) && (numberRequestsSaved % 1000 == 0))
                         {
@@ -131,7 +131,7 @@ namespace WRM_TrashRecyclePopulation
 
 
 
-                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdorrRequestList)
+                foreach (BackdoorServiceRequest backdoorRequest in orderedSolidWasteBackdoorRequestList)
                     {
 
                     try
@@ -179,7 +179,7 @@ namespace WRM_TrashRecyclePopulation
             if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
                 {
 
-                throw new WRMNullValueException("Backdoor Unable to find Address : " + dictionaryKey);
+                throw new WRMNullValueException("Backdoor Unable to find Address1 : [" + streetNumber + " " + streetName + " " + unitNumber + " " + zipCode + "]");
                 }
 
             BackDoorPickup backdoorPickup = buildRequestBackdoorService(backdoorRequest);
@@ -212,10 +212,9 @@ namespace WRM_TrashRecyclePopulation
             if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out foundAddressId))
                 {
 
-                throw new WRMNullValueException("Backdoor Unable to find Address : " + dictionaryKey);
+                throw new WRMNullValueException("Update Backdoor Unable to find Address2\r\n: [" + streetNumber + " " + streetName + " " + unitNumber + " " + zipCode + "]");
                 }
-
-            BackDoorPickup backdoorPickup = buildRequestBackdoorService(backdoorRequest);
+        BackDoorPickup backdoorPickup = buildRequestBackdoorService(backdoorRequest);
 
             backdoorPickup.AddressID = foundAddressId;
 
@@ -310,11 +309,18 @@ namespace WRM_TrashRecyclePopulation
 
             string dictionaryKey = IdentifierProvider.provideIdentifierFromAddress(streetName, streetNumber, unitNumber, zipCode);
             int addressId = 0;
+            /* 
+             * I don't remember why I wanted to throw an error if the address is not already in the database, 
+             * presumably because if the address had a cart then they would already be in the database
+             * So that any request we have in the database that hasn't a cart issued, but is active, needs to be looked into
+             * Of course the address may be entered incorrectly
+             */
+             
             if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out addressId))
                 {
-                throw new WRMNullValueException("Address is not found for " + dictionaryKey);
+                throw new WRMNullValueException("Backdoor Unable to find Address3 [" + streetNumber + " " + streetName + " " + unitNumber + " " + zipCode + "]");
                 }
-
+                
             if (!ResidentAddressPopulation.ResidentDictionary.TryGetValue(dictionaryKey, out foundResident))
                 {
 
@@ -343,7 +349,7 @@ namespace WRM_TrashRecyclePopulation
             int addressId = 0;
             if (!AddressPopulation.AddressIdentiferDictionary.TryGetValue(dictionaryKey, out addressId))
                 {
-                throw new WRMNullValueException("Address is not found for " + dictionaryKey);
+                throw new WRMNullValueException("Backdoor Unable to find Address4 [" + streetNumber + " " + streetName + " " + unitNumber + " " + zipCode + "]");
                 }
 
             if (ResidentAddressPopulation.ResidentDictionary.TryGetValue(dictionaryKey, out foundResident))

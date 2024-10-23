@@ -43,7 +43,6 @@ namespace WRM_TrashRecyclePopulation
                 {
                 ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 
-
                 WRMLogger.LogBuilder.AppendLine("Start " + justNow.ToString("o", new CultureInfo("en-us")) + " MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
 
                 // initiate the KGIS Address Cache
@@ -80,7 +79,6 @@ namespace WRM_TrashRecyclePopulation
                     }
 
                 }
-
             catch (Exception ex)
                 {
                 WRMLogger.LogBuilder.AppendLine(ex.Message);
@@ -99,8 +97,6 @@ namespace WRM_TrashRecyclePopulation
             WRMLogger.LogBuilder.AppendLine("Population End " + justNow.ToString("o", new CultureInfo("en-us")) + "Total MilliSeconds passed : " + timeDiff.TotalMilliseconds.ToString());
             WRMLogger.Logger.log();
 
-
             }
-
         }
     }
